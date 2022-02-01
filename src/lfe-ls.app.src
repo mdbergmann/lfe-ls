@@ -1,0 +1,21 @@
+{application, 'lfe-ls', [
+    {description, "An LFE application"},
+    {vsn, git},
+    {registered, []},
+    {mod, {'lfe-ls-app', []}},
+    {applications, [
+        kernel,
+        stdlib
+    ]},
+    {env, [{logger, [{handler, default, logger_std_h,
+                      #{level => debug,
+                        formatter => {logger_formatter, 
+                                      #{legacy_header => false,
+                                        template => [time," ",pid," ",msg,"\n"]}}}}]},
+           {logger_level, debug}
+    ]},
+    {modules, []},
+
+    {licenses, ["Apache 2.0"]},
+    {links, []}
+ ]}.
