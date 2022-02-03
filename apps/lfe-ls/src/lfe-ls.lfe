@@ -30,7 +30,14 @@
 ;;; records
 ;;; -----------------
 
-(defrecord state (socket))
+(defrecord req
+  (expected-len 0)
+  (current-len 0)
+  (data #""))
+
+(defrecord state
+  (socket 'nil)
+  (req (make-req)))
 
 ;;; -------------------------
 ;;; gen_server implementation
@@ -57,7 +64,7 @@
    `#(ok ,(make-state socket listen-socket)))
   ((`#(other))
    ;; used from test
-   `#(ok ,(make-state socket 'nil))))
+   `#(ok ,(make-state))))
 
 (defun handle_cast
   (('accept state)
@@ -74,15 +81,36 @@
     (lfe-ls-sup:start-socket)
     `#(noreply ,(set-state-socket state accept-socket))))
 
+(defun double-nl () #"\r\n\r\n")
+
+(defun %handle-new-req (rest-req req)
+  (case (binary:split rest-req (double-nl))
+    (`(,len ,rest)
+     (let* ((len-and-nl (binary (len binary)
+                                ((double-nl) binary)))
+            (proper-rest (string:prefix rest-req
+                                        len-and-nl)))
+       (make-req expected-len (erlang:binary_to_integer len)
+                 current-len (byte_size proper-rest)
+                 data proper-rest)))))
+
+(defun %received-handler (msg req)
+  (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
+  (logger:debug "Received msg: ~p" `(,msg))
+  (let ((new-req (case (string:prefix msg "Content-Length: ")
+                   ('nomatch req);; append data to req data)
+                   (rest-req (%handle-new-req rest-req req)))))
+    `#(ok ,new-req)))
+
 (defun handle_call
   ((`#(send ,msg) _from state)
    (logger:debug "Sending msg: ~s" `(,msg))
    (gen_tcp:send (state-socket state) (io_lib:format "~s~n" `(,msg)))
    `#(reply ok ,state))
   ((`#(received ,msg) _from state)
-   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
-   (logger:debug "Received msg: ~p" `(,msg))
-   `#(reply #(ok ,state) ,state))
+   (let* ((`#(,code ,new-req) (%received-handler msg (state-req state)))
+          (new-state (set-state-req state new-req)))
+     `#(reply #(,code ,new-state) ,new-state)))
   (('stop _from state)
    `#(stop normal state))
   ((message _from state)
@@ -118,6 +146,9 @@
   `#(ok ,state))
 
 ;;; private API
+
+(defun concat-binary (bin1 bin2)
+  (binary (bin1 binary) (bin2 binary)))
 
 (defun binary-to-string (bin)
   (lists:flatten (io_lib:format "~p" `(,bin))))

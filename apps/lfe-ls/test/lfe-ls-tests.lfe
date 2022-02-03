@@ -12,7 +12,7 @@
 
 (deftest test-receive-package
   (let* ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
-         (response (gen_server:call pid `#(received #"Content-Length: 27\r\n\r\n"))))
+         (response (gen_server:call pid `#(received #"Content-Length: 5\r\n\r\nHello"))))
     (io:format "resp: ~p~n" `(,response))
-    (is-match `#(ok #(state nil)) response)
+    (is-match `#(ok #(state nil #(req 5 5 #"Hello"))) response)
     (gen_server:stop pid)))
