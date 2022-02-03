@@ -16,7 +16,10 @@
   (export
    (pid 0)
    (echo 1)
-   (send 1)))
+   (send 1))
+  ;; utils
+  (export
+   (concat-binary 2)))
 
 ;;; ----------------
 ;;; config functions
@@ -83,23 +86,28 @@
 
 (defun double-nl () #"\r\n\r\n")
 
-(defun %handle-new-req (rest-req req)
-  (case (binary:split rest-req (double-nl))
+(defun %handle-new-req (rest-msg req)
+  (case (binary:split rest-msg (double-nl))
     (`(,len ,rest)
      (let* ((len-and-nl (binary (len binary)
                                 ((double-nl) binary)))
-            (proper-rest (string:prefix rest-req
+            (proper-rest (string:prefix rest-msg
                                         len-and-nl)))
        (make-req expected-len (erlang:binary_to_integer len)
                  current-len (byte_size proper-rest)
                  data proper-rest)))))
 
+(defun %handle-partial-req (msg req)
+  (clj:-> req
+          (set-req-current-len (+ (req-current-len req) (byte_size msg)))
+          (set-req-data (concat-binary (req-data req) msg))))
+
 (defun %received-handler (msg req)
   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
   (logger:debug "Received msg: ~p" `(,msg))
   (let ((new-req (case (string:prefix msg "Content-Length: ")
-                   ('nomatch req);; append data to req data)
-                   (rest-req (%handle-new-req rest-req req)))))
+                   ('nomatch (%handle-partial-req msg req))
+                   (rest-msg (%handle-new-req rest-msg req)))))
     `#(ok ,new-req)))
 
 (defun handle_call
@@ -117,10 +125,6 @@
    `#(reply ,(unknown-command) ,state)))
 
 (defun handle_info
-  ((`#(tcp ,socket ,(++ "quit" _)) state)
-   (logger:debug "quit")
-   (gen_tcp:close socket)
-   `#(stop normal ,state))
   ((`#(tcp ,socket ,msg) state)
    (logger:debug "received msg len: ~p" `(,(byte_size msg)))
    (logger:debug "received msg: ~p" `(,msg))
