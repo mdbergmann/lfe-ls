@@ -3,8 +3,7 @@
   ;; supervisor implementation
   (export
    (start_link 0)
-   (stop 0)
-   (shutdown 0))
+   (stop 0))
   ;; callback implementation
   (export
    (init 1))
@@ -34,10 +33,7 @@
                          (supervisor-opts)))
 
 (defun stop ()
-  (gen_server:call (SERVER) 'stop))
-
-(defun shutdown ()
-  (exit (pid) 'shutdown))
+  (erlang:stop "requested to stop!"))
 
 ;;; -----------------------
 ;;; callback implementation

@@ -40,7 +40,7 @@
   (logger:debug "start_link (server)")
   (gen_server:start_link `#(local ,(SERVER))
                          (MODULE)
-                         listen-socket
+                         `#(socket ,listen-socket)
                          (genserver-opts)))
 
 (defun stop ()
@@ -50,29 +50,41 @@
 ;;; callback implementation
 ;;; -----------------------
 
-(defun init (socket)
-  (logger:debug "init (server)")
-  (gen_server:cast (self) 'accept)
-  `#(ok ,(make-state socket socket)))
+(defun init
+  ((`#(socket ,listen-socket))
+   (logger:debug "init (server)")
+   (gen_server:cast (self) 'accept)
+   `#(ok ,(make-state socket listen-socket)))
+  ((`#(other))
+   ;; used from test
+   `#(ok ,(make-state socket 'nil))))
 
 (defun handle_cast
   (('accept state)
-   (logger:debug "waiting for connection...")
-   (let (((tuple 'ok accept-socket)
-          (gen_tcp:accept (state-socket state))))
-     (logger:debug "connection accepted (server)")
-     (lfe-ls-sup:start-socket)
-     ;;(erlang:send accept-socket "Hello" '())
-     `#(noreply ,(set-state-socket state accept-socket))))
+   (%accept-handler state))
   ((_ state)
    (logger:debug "handle-cast, wildcard (server)")
    `#(noreply ,state)))
+
+(defun %accept-handler (state)
+  (logger:debug "waiting for connection...")
+  (let ((`#(ok ,accept-socket)
+         (gen_tcp:accept (state-socket state))))
+    (logger:debug "connection accepted (server)")
+    (lfe-ls-sup:start-socket)
+    `#(noreply ,(set-state-socket state accept-socket))))
 
 (defun handle_call
   ((`#(send ,msg) _from state)
    (logger:debug "Sending msg: ~s" `(,msg))
    (gen_tcp:send (state-socket state) (io_lib:format "~s~n" `(,msg)))
    `#(reply ok ,state))
+  ((`#(received ,msg) _from state)
+   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
+   (logger:debug "Received msg: ~p" `(,msg))
+   `#(reply #(ok ,state) ,state))
+  (('stop _from state)
+   `#(stop normal state))
   ((message _from state)
    `#(reply ,(unknown-command) ,state)))
 
@@ -82,7 +94,8 @@
    (gen_tcp:close socket)
    `#(stop normal ,state))
   ((`#(tcp ,socket ,msg) state)
-   (logger:debug "received msg: ~s" `(,msg))
+   (logger:debug "received msg len: ~p" `(,(byte_size msg)))
+   (logger:debug "received msg: ~p" `(,msg))
    `#(noreply ,state))
   ((`#(tcp_error ,_socket ,_) state)
    (logger:debug "tcp-error")
@@ -103,6 +116,11 @@
 
 (defun code_change (_old-version state _extra)
   `#(ok ,state))
+
+;;; private API
+
+(defun binary-to-string (bin)
+  (lists:flatten (io_lib:format "~p" `(,bin))))
 
 ;;; --------------
 ;;; our server API
