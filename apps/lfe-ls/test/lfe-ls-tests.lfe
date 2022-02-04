@@ -21,6 +21,13 @@
     (is-match `#(ok #(state nil #(req 5 5 #"Hello"))) response)
     (gen_server:stop pid)))
 
+(deftest test-receive-package--incomplete-req--replaced-by-new-req
+  (let* ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
+         (_ (gen_server:call pid `#(received #"Content-Length: 10\r\n\r\nHello")))
+         (response (gen_server:call pid `#(received #"Content-Length: 5\r\n\r\nWorld"))))
+    (is-match `#(ok #(state nil #(req 5 5 #"World"))) response)
+    (gen_server:stop pid)))
+
 (deftest test-receive-package--partial-req
   (let* ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
          (response1 (gen_server:call pid `#(received #"Content-Length: 10\r\n\r\nHello")))
@@ -38,7 +45,6 @@
     (is-equal (json-msg-part1) (req-data (state-req state1)))
     (is-equal (full-json-msg) (req-data (state-req state2)))
     (gen_server:stop pid)))
-
 
 (defun start-json-msg ()
   (concat-binary (preamble-json-msg) (json-msg-part1)))

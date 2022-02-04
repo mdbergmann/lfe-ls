@@ -121,6 +121,8 @@
   ((`#(tcp ,socket ,msg) state)
    (logger:debug "received msg len: ~p" `(,(byte_size msg)))
    (logger:debug "received msg: ~p" `(,msg))
+   ;; collect response and send back via socket
+   (gen_server:call (self) `#(received ,msg))
    `#(noreply ,state))
   ((`#(tcp_error ,_socket ,_) state)
    (logger:debug "tcp-error")
