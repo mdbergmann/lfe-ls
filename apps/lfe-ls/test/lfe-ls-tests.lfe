@@ -5,6 +5,9 @@
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
+(include-lib "apps/lfe-ls/include/ls-model.lfe")
+
+
 ;; your test code here
 
 (deftest create-lfe-ls
@@ -28,15 +31,20 @@
 
 (deftest test-receive-package--real-partial-rew
   (let* ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
-         (response1 (gen_server:call pid `#(received ,(start-json-msg))))
-         (response2 (gen_server:call pid `#(received ,(json-msg-part2)))))
-    (is-match `#(ok #(state nil #(req 2027 1436 _))) response1)
-    (is-match `#(ok #(state nil #(req 2027 2027 _))) response2)
+         (`#(ok ,state1) (gen_server:call pid `#(received ,(start-json-msg))))
+         (`#(ok ,state2) (gen_server:call pid `#(received ,(json-msg-part2)))))
+    (is-match (tuple 'state 'nil (tuple 'req 2027 1436 _)) state1)
+    (is-match (tuple 'state 'nil (tuple 'req 2027 2027 _)) state2)
+    (is-equal (json-msg-part1) (req-data (state-req state1)))
+    (is-equal (full-json-msg) (req-data (state-req state2)))
     (gen_server:stop pid)))
 
 
 (defun start-json-msg ()
   (concat-binary (preamble-json-msg) (json-msg-part1)))
+
+(defun full-json-msg ()
+  (concat-binary (json-msg-part1) (json-msg-part2)))
 
 (defun preamble-json-msg ()
   #"Content-Length: 2027\r\n\r\n")
