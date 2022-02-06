@@ -78,15 +78,15 @@
 
 (defun double-nl () #"\r\n\r\n")
 
-(defun request-complete-p (req)
+(defun %request-complete-p (req)
   (== (req-expected-len req) (req-current-len req)))
 
-(defun %handle-new-req (rest-msg req)
-  (case (binary:split rest-msg (double-nl))
+(defun %handle-new-req (msg req)
+  (case (binary:split msg (double-nl))
     (`(,len ,rest)
      (let* ((len-and-nl (binary (len binary)
                                 ((double-nl) binary)))
-            (proper-rest (string:prefix rest-msg
+            (proper-rest (string:prefix msg
                                         len-and-nl)))
        (make-req expected-len (erlang:binary_to_integer len)
                  current-len (byte_size proper-rest)
@@ -105,8 +105,9 @@
          (new-req (case (string:prefix msg "Content-Length: ")
                     ('nomatch (%handle-partial-req msg req))
                     (rest-msg (%handle-new-req rest-msg req)))))
-    (if (request-complete-p new-req)
+    (if (%request-complete-p new-req)
       (case (lsp-proc:process-input (req-data new-req))
+        ;; probably we have more cases
         (`#(ok ,process-out)
          (response-sender:send-response sock process-out))))
     `#(ok ,new-req)))
