@@ -141,10 +141,6 @@ Returns: #(ok new-state)"
   ((`#(tcp_closed ,_socket) state)
    (logger:debug "tcp-closed")
    `#(stop normal ,state))
-  
-  ((`#(EXIT ,pid ,reason) state)
-   (logger:debug "Process ~p exited! (Reason: ~p)~n" `(,pid ,reason))
-   `#(noreply ,state))
   ((e state)
    (logger:warn "unexpected: ~p" `(,e))
    `#(noreply ,state)))
