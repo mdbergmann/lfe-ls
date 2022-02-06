@@ -88,7 +88,10 @@
           (set-req-current-len (+ (req-current-len req) (byte_size msg)))
           (set-req-data (concat-binary (req-data req) msg))))
 
-(defun %received-handler (msg state)
+(defun %on-tcp-receive (msg state)
+  "Handles data recived via tcp.
+Can be 'call'ed or 'cast'.
+Returns: #(ok new-state)"
   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
   (logger:debug "Received msg: ~p" `(,msg))
   (let* ((req (state-req state))
@@ -101,20 +104,13 @@
         ;; probably we have more cases
         (`#(ok ,process-out)
          (response-sender:send-response sock process-out))))
-    `#(ok ,new-req)))
-
-(defun on-tcp-receive (msg state)
-  "Handles data recived via tcp.
-Can be 'call'ed or 'cast'.
-Returns: #(ok new-state)"
-  (let* ((`#(,code ,new-req) (%received-handler msg state)))
-    `#(,code ,(set-state-req state new-req))))
+    `#(ok ,(set-state-req state new-req))))
 
 (defun handle_cast
   (('accept state)
    (%accept-handler state))
   ((`#(received ,msg) state)
-   (let ((`#(,code ,new-state) (on-tcp-receive msg state)))
+   (let ((`#(,code ,new-state) (%on-tcp-receive msg state)))
      `#(noreply #(,code ,new-state) ,new-state)))
   ((_ state)
    (logger:debug "handle-cast, wildcard (server)")
@@ -122,7 +118,7 @@ Returns: #(ok new-state)"
 
 (defun handle_call
   ((`#(received ,msg) _from state)
-   (let ((`#(,code ,new-state) (on-tcp-receive msg state)))
+   (let ((`#(,code ,new-state) (%on-tcp-receive msg state)))
      `#(reply #(,code ,new-state) ,new-state)))
   (('stop _from state)
    `#(stop normal state))
