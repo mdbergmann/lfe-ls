@@ -4,8 +4,11 @@
 (defun process-input (input)
   (try
       (let ((json-input (ljson:decode input)))
-        `#(ok ,(ljson:encode #(#"Bar" #"foo"))))
+        `#(ok ,(ljson:encode '(#(#"id" 99)
+                               #(#"result" true)))))
     (catch
       ((tuple type value stacktrace)
-       (logger:error "Error on json operation: ~p" `(,stacktrace))
-       `#(error "Unable to decode json!")))))
+       (progn
+         (logger:error "Error on json operation: ~p, type: ~p, value: ~p"
+                       `(,stacktrace ,type ,value))
+         `#(error "Unable to decode json!"))))))
