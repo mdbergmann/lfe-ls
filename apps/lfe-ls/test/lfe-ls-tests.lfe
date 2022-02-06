@@ -7,8 +7,18 @@
 
 (include-lib "apps/lfe-ls/include/ls-model.lfe")
 
-
-;; your test code here
+(defmacro with-fixture (body)
+  `(progn
+     (meck:new 'lsp-proc)
+     (meck:new 'response-sender)
+     (let ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '())))
+       (try
+           ,@body
+         (catch
+           (e (io:format "Exception: ~p~n" e)))))
+     (gen_server:stop pid)
+     (meck:unload 'lsp-proc)
+     (meck:unload 'response-sender)))
 
 (deftest create-lfe-ls
   (let ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '())))
@@ -29,28 +39,54 @@
     (is (meck:called 'response-sender 'send-response '(_ #"{\"Pong\"}")))
     (is (meck:validate 'response-sender))
     (gen_server:stop pid))
-
   (meck:unload 'lsp-proc)
   (meck:unload 'response-sender))
 
 ;; todo: add tests for error resppnse from lsp-proc.
 
 (deftest test-receive-package--incomplete-req--replaced-by-new-req
+  (meck:new 'lsp-proc)
+  (meck:new 'response-sender)
+  (meck:expect 'lsp-proc 'process-input (lambda (json-in) `#(ok #"{\"Pong\"}")))
+  (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
+
   (let* ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
-         (_ (gen_server:call pid `#(received #"Content-Length: 10\r\n\r\nHello")))
-         (response (gen_server:call pid `#(received #"Content-Length: 5\r\n\r\nWorld"))))
-    (is-match `#(ok #(state nil #(req 5 5 #"World"))) response)
-    (gen_server:stop pid)))
+         (_ (gen_server:call pid `#(received #"Content-Length: 13\r\n\r\n{\"Hello\"}")))
+         (response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
+    (is-match `#(ok #(state nil #(req 8 8 #"{\"Ping\"}"))) response)
+    (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}")))
+    (is (meck:validate 'lsp-proc))
+    (is (meck:called 'response-sender 'send-response '(_ #"{\"Pong\"}")))
+    (is (meck:validate 'response-sender))
+    (gen_server:stop pid))
+  (meck:unload 'lsp-proc)
+  (meck:unload 'response-sender))
 
 (deftest test-receive-package--partial-req
-  (let* ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
-         (response1 (gen_server:call pid `#(received #"Content-Length: 10\r\n\r\nHello")))
-         (response2 (gen_server:call pid `#(received #"World"))))
-    (is-match `#(ok #(state nil #(req 10 5 #"Hello"))) response1)
-    (is-match `#(ok #(state nil #(req 10 10 #"HelloWorld"))) response2)
-    (gen_server:stop pid)))
+  (meck:new 'lsp-proc)
+  (meck:new 'response-sender)
+  (meck:expect 'lsp-proc 'process-input (lambda (json-in) `#(ok #"{\"WorldHello\"}")))
+  (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
 
-(deftest test-receive-package--real-partial-rew
+  (let* ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
+         (response1 (gen_server:call pid `#(received #"Content-Length: 14\r\n\r\n{\"Hello")))
+         (response2 (gen_server:call pid `#(received #"World\"}"))))
+    (is-match `#(ok #(state nil #(req 14 7 #"{\"Hello"))) response1)
+    (is-match `#(ok #(state nil #(req 14 14 #"{\"HelloWorld\"}"))) response2)
+    (is (meck:called 'lsp-proc 'process-input '(#"{\"HelloWorld\"}")))
+    (is (meck:validate 'lsp-proc))
+    (is (meck:called 'response-sender 'send-response '(_ #"{\"WorldHello\"}")))
+    (is (meck:validate 'response-sender))
+    (gen_server:stop pid))
+  (meck:unload 'lsp-proc)
+  (meck:unload 'response-sender))
+
+(deftest test-receive-package--real-partial-req
+  (meck:new 'lsp-proc)
+  (meck:new 'response-sender)
+  (meck:expect 'lsp-proc 'process-input (lambda (json-in) `#(ok #"dummy")))
+  (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
+
   (let* ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
          (`#(ok ,state1) (gen_server:call pid `#(received ,(start-json-msg))))
          (`#(ok ,state2) (gen_server:call pid `#(received ,(json-msg-part2)))))
@@ -58,7 +94,9 @@
     (is-match (tuple 'state 'nil (tuple 'req 2027 2027 _)) state2)
     (is-equal (json-msg-part1) (req-data (state-req state1)))
     (is-equal (full-json-msg) (req-data (state-req state2)))
-    (gen_server:stop pid)))
+    (gen_server:stop pid))
+  (meck:unload 'lsp-proc)
+  (meck:unload 'response-sender))
 
 (defun start-json-msg ()
   (concat-binary (preamble-json-msg) (json-msg-part1)))
