@@ -14,8 +14,7 @@
    (code_change 3))
   ;; server API
   (export
-   (pid 0)
-   (send 1))
+   (pid 0))
   ;; utils
   (export
    (concat-binary 2)))
@@ -26,7 +25,6 @@
 
 (defun SERVER () (MODULE))
 (defun genserver-opts () '())
-(defun unknown-command () #(error "Unknown command."))
 
 ;;; -----------------
 ;;; records
@@ -60,13 +58,6 @@
   ((`#(other))
    ;; used from test
    `#(ok ,(make-state))))
-
-(defun handle_cast
-  (('accept state)
-   (%accept-handler state))
-  ((_ state)
-   (logger:debug "handle-cast, wildcard (server)")
-   `#(noreply ,state)))
 
 (defun %accept-handler (state)
   (logger:debug "waiting for connection...")
@@ -112,26 +103,37 @@
          (response-sender:send-response sock process-out))))
     `#(ok ,new-req)))
 
+(defun on-tcp-receive (msg state)
+  "Handles data recived via tcp.
+Can be 'call'ed or 'cast'.
+Returns: #(ok new-state)"
+  (let* ((`#(,code ,new-req) (%received-handler msg state)))
+    `#(,code ,(set-state-req state new-req))))
+
+(defun handle_cast
+  (('accept state)
+   (%accept-handler state))
+  ((`#(received ,msg) state)
+   (let ((`#(,code ,new-state) (on-tcp-receive msg state)))
+     `#(noreply #(,code ,new-state) ,new-state)))
+  ((_ state)
+   (logger:debug "handle-cast, wildcard (server)")
+   `#(noreply ,state)))
+
 (defun handle_call
-  ((`#(send ,msg) _from state)
-   (logger:debug "Sending msg: ~s" `(,msg))
-   (gen_tcp:send (state-socket state) (io_lib:format "~s~n" `(,msg)))
-   `#(reply ok ,state))
   ((`#(received ,msg) _from state)
-   (let* ((`#(,code ,new-req) (%received-handler msg state))
-          (new-state (set-state-req state new-req)))
+   (let ((`#(,code ,new-state) (on-tcp-receive msg state)))
      `#(reply #(,code ,new-state) ,new-state)))
   (('stop _from state)
    `#(stop normal state))
   ((message _from state)
-   `#(reply ,(unknown-command) ,state)))
+   `#(reply #(error "Unknown command.") ,state)))
 
 (defun handle_info
   ((`#(tcp ,socket ,msg) state)
    (logger:debug "received msg len: ~p" `(,(byte_size msg)))
    (logger:debug "received msg: ~p" `(,msg))
-   ;; collect response and send back via socket
-   (gen_server:call (self) `#(received ,msg))
+   (gen_server:cast (self) `#(received ,msg))
    `#(noreply ,state))
   ((`#(tcp_error ,_socket ,_) state)
    (logger:debug "tcp-error")
@@ -165,6 +167,3 @@
 
 (defun pid ()
   (erlang:whereis (SERVER)))
-
-(defun send (str)
-  (gen_server:call (SERVER) `#(send ,str)))
