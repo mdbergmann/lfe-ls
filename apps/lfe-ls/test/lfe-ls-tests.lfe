@@ -16,10 +16,24 @@
     (gen_server:stop pid)))
 
 (deftest test-receive-package--full-req
+  (meck:new 'lsp-proc)
+  (meck:new 'response-sender)
+  (meck:expect 'lsp-proc 'process-input (lambda (json-in) `#(ok #"{\"Pong\"}")))
+  (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
+
   (let* ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
-         (response (gen_server:call pid `#(received #"Content-Length: 5\r\n\r\nHello"))))
-    (is-match `#(ok #(state nil #(req 5 5 #"Hello"))) response)
-    (gen_server:stop pid)))
+         (response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
+    (is-match `#(ok #(state nil #(req 8 8 #"{\"Ping\"}"))) response)
+    (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}")))
+    (is (meck:validate 'lsp-proc))
+    (is (meck:called 'response-sender 'send-response '(_ #"{\"Pong\"}")))
+    (is (meck:validate 'response-sender))
+    (gen_server:stop pid))
+
+  (meck:unload 'lsp-proc)
+  (meck:unload 'response-sender))
+
+;; todo: add tests for error resppnse from lsp-proc.
 
 (deftest test-receive-package--incomplete-req--replaced-by-new-req
   (let* ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))

@@ -1,17 +1,36 @@
 {"1.2.0",
 [{<<"erlang_color">>,{pkg,<<"erlang_color">>,<<"1.0.0">>},1},
+ {<<"jsx">>,
+  {git,"https://github.com/talentdeficit/jsx.git",
+       {ref,"fc2a001073f2300ba38427c23e83d5673c020542"}},
+  1},
  {<<"lfe">>,{pkg,<<"lfe">>,<<"2.0.1">>},0},
+ {<<"ljson">>,
+  {git,"https://github.com/mdbergmann/ljson.git",
+       {ref,"6942b3a3495c15825e4f3757f1c52a1a4237403c"}},
+  0},
  {<<"logjam">>,{pkg,<<"logjam">>,<<"1.0.1">>},0},
- {<<"ltest">>,{pkg,<<"ltest">>,<<"0.13.1">>},0}]}.
+ {<<"ltest">>,{pkg,<<"ltest">>,<<"0.13.1">>},0},
+ {<<"lutil">>,
+  {git,"https://github.com/lfex/lutil.git",
+       {ref,"11902399ab4ca7b04372bf2a9d7eeaa58db01dfd"}},
+  0},
+ {<<"meck">>,{pkg,<<"meck">>,<<"0.9.2">>},0},
+ {<<"mochiweb">>,
+  {git,"https://github.com/mochi/mochiweb.git",
+       {ref,"9efbaac0a2aff24121be76fdedb56ef92af3d574"}},
+  1}]}.
 [
 {pkg_hash,[
  {<<"erlang_color">>, <<"145FE1D2E65C4516E4F03FEFCA6C2F47EBAD5899D978D70382A5CFE643E4AC9E">>},
  {<<"lfe">>, <<"C95185AC7E244EDB60C72CE96087D2D3FBC85334109B741790EF49F6A52E728A">>},
  {<<"logjam">>, <<"0F658834D10B1102E5458C9B3871A0E4D19A74510ADFC4228578F4C7C6C18F63">>},
- {<<"ltest">>, <<"2CECCA53A17D8772C8E0251AA94DFD4FB5989476056B434EB1BC040AD382B36E">>}]},
+ {<<"ltest">>, <<"2CECCA53A17D8772C8E0251AA94DFD4FB5989476056B434EB1BC040AD382B36E">>},
+ {<<"meck">>, <<"85CCBAB053F1DB86C7CA240E9FC718170EE5BDA03810A6292B5306BF31BAE5F5">>}]},
 {pkg_hash_ext,[
  {<<"erlang_color">>, <<"6B17E5E589C8FEF540574C9EA32B67CEC2C8A44283AAFE474D6E5818FB3EE038">>},
  {<<"lfe">>, <<"C3EA9732DF613186C14CAC840D25283B87914AE74D87AFCBA3230AAB41D25E9F">>},
  {<<"logjam">>, <<"8700CFC5AB86C780FF9B92A1758F2742945939B7223424B5A420B26A9A38CFB1">>},
- {<<"ltest">>, <<"1B1666F37A2DDB07E0031AF609358A9C7D32D1A3B691D6A007D16AF4B3006755">>}]}
+ {<<"ltest">>, <<"1B1666F37A2DDB07E0031AF609358A9C7D32D1A3B691D6A007D16AF4B3006755">>},
+ {<<"meck">>, <<"81344F561357DC40A8344AFA53767C32669153355B626EA9FCBC8DA6B3045826">>}]}
 ].

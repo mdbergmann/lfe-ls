@@ -15,7 +15,6 @@
   ;; server API
   (export
    (pid 0)
-   (echo 1)
    (send 1))
   ;; utils
   (export
@@ -79,6 +78,9 @@
 
 (defun double-nl () #"\r\n\r\n")
 
+(defun request-complete-p (req)
+  (== (req-expected-len req) (req-current-len req)))
+
 (defun %handle-new-req (rest-msg req)
   (case (binary:split rest-msg (double-nl))
     (`(,len ,rest)
@@ -95,12 +97,18 @@
           (set-req-current-len (+ (req-current-len req) (byte_size msg)))
           (set-req-data (concat-binary (req-data req) msg))))
 
-(defun %received-handler (msg req)
+(defun %received-handler (msg state)
   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
   (logger:debug "Received msg: ~p" `(,msg))
-  (let ((new-req (case (string:prefix msg "Content-Length: ")
-                   ('nomatch (%handle-partial-req msg req))
-                   (rest-msg (%handle-new-req rest-msg req)))))
+  (let* ((req (state-req state))
+         (sock (state-socket state))
+         (new-req (case (string:prefix msg "Content-Length: ")
+                    ('nomatch (%handle-partial-req msg req))
+                    (rest-msg (%handle-new-req rest-msg req)))))
+    (if (request-complete-p new-req)
+      (case (lsp-proc:process-input (req-data new-req))
+        (`#(ok ,process-out)
+         (response-sender:send-response sock process-out))))
     `#(ok ,new-req)))
 
 (defun handle_call
@@ -109,7 +117,7 @@
    (gen_tcp:send (state-socket state) (io_lib:format "~s~n" `(,msg)))
    `#(reply ok ,state))
   ((`#(received ,msg) _from state)
-   (let* ((`#(,code ,new-req) (%received-handler msg (state-req state)))
+   (let* ((`#(,code ,new-req) (%received-handler msg state))
           (new-state (set-state-req state new-req)))
      `#(reply #(,code ,new-state) ,new-state)))
   (('stop _from state)
@@ -152,15 +160,10 @@
 (defun binary-to-string (bin)
   (lists:flatten (io_lib:format "~p" `(,bin))))
 
-;;; --------------
 ;;; our server API
-;;; --------------
 
 (defun pid ()
   (erlang:whereis (SERVER)))
-
-(defun echo (msg)
-  (gen_server:call (SERVER) `#(echo ,msg)))
 
 (defun send (str)
   (gen_server:call (SERVER) `#(send ,str)))
