@@ -1,7 +1,10 @@
 (defmodule lsp-proc
-  (export (process-input 1)))
+  (export (process-input 1))
+  (import (from lfe-ls
+                (concat-binary 2))))
 
 (defun req-parse-error () -32700)
+(defun req-invalid-request-error () -32600)
 
 (defun process-input (input)
   (case (try
@@ -18,16 +21,29 @@
              (progn
                (logger:error "Error on json operation: ~p, type: ~p, value: ~p"
                              `(,stacktrace ,type ,value))
-               `#(ok (#(#"id" null) #(#"error" (#(#"code" ,(req-parse-error))
-                                                #(#"message" #"Error on parsing json!")))))))))
+               `#(ok ,(make-error-response 'null
+                                           (req-parse-error)
+                                           #"Error on parsing json!"))))))
     (`#(ok ,response) `#(ok ,(ljson:encode response)))))
 
 (defun process-method (id method params)
   `#(ok ,(case method
            (#"initialize"
-            `(#(#"id" ,id) #(#"result" ,(make-initialize-result params))))
+            (make-result-response id (make-initialize-result params)))
+           (#"test-success"
+            (make-result-response id 'true))
            (_
-            `(#(#"id" ,id) #(#"result" true))))))
+            (make-error-response id
+                                 (req-invalid-request-error)
+                                 (concat-binary #"Method not supported: '"
+                                                (concat-binary method #"'!")))))))
+
+(defun make-result-response (id result)
+  `(#(#"id" ,id) #(#"result" ,result)))
+
+(defun make-error-response (id code err-msg)
+  `(#(#"id" ,id) #(#"error" (#(#"code" ,code)
+                             #(#"message" ,err-msg)))))
 
 (defun make-initialize-result (req-params)
   '(#(#"capabilities" #())

@@ -7,6 +7,15 @@
   (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
             (lsp-proc:process-input #"{\"Foo\"}")))
 
+(deftest error-invalid-request--method-not-implemented
+  (is-equal `#(ok #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
+            (lsp-proc:process-input #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"not-supported\",
+\"params\":{}
+}")))
+
 (deftest process-simple-message
   (is-equal `#(ok #"{\"id\":99,\"result\":true}")
             (lsp-proc:process-input #"{
