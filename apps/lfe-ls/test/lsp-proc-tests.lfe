@@ -4,7 +4,7 @@
 (include-lib "ltest/include/ltest-macros.lfe")
 
 (deftest error-on-decoding
-  (is-equal `#(error "Unable to decode json!")
+  (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
             (lsp-proc:process-input #"{\"Foo\"}")))
 
 (deftest process-simple-message
