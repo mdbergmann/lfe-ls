@@ -22,10 +22,10 @@
   `#(ok ,(ljson:encode
           (case method
             (#"initialize"
-             `(#(#"id" ,id) #(#"result" ,(initialize-result params))))
+             `(#(#"id" ,id) #(#"result" ,(make-initialize-result params))))
             (_
              `(#(#"id" ,id) #(#"result" true)))))))
 
-(defun initialize-result (req-params)
+(defun make-initialize-result (req-params)
   '(#(#"capabilities" #())
     #(#"serverInfo" (#(#"name" #"lfe-ls")))))
