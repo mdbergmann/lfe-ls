@@ -3,31 +3,47 @@
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
+(defmacro with-fixture body
+  `(let ((proc (lsp-proc:start 'null)))
+     (progn
+       ,@body)
+     (gen_server:cast proc 'stop)))
+
+(defmacro process-input (proc input)
+  `(gen_server:call ,proc `#(process-input ,,input)))
+
 (deftest error-on-decoding
-  (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
-            (lsp-proc:process-input #"{\"Foo\"}")))
+  (with-fixture
+   (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
+             (process-input proc #"{\"Foo\"}"))))
 
 (deftest error-invalid-request--method-not-implemented
-  (is-equal `#(ok #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
-            (lsp-proc:process-input #"{
+  (with-fixture
+   (is-equal `#(ok #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
+             (process-input proc #"{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"not-supported\",
 \"params\":{}
-}")))
+}"))))
 
 (deftest process-simple-message
-  (is-equal `#(ok #"{\"id\":99,\"result\":true}")
-            (lsp-proc:process-input #"{
+  (with-fixture
+   (is-equal `#(ok #"{\"id\":99,\"result\":true}")
+             (process-input proc #"{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"test-success\",
 \"params\":{}
-}")))
+}"))))
 
 (deftest process-simple-initialize-message
-  (is-equal `#(ok #"{\"id\":99,\"result\":{\"capabilities\":{},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")
-            (lsp-proc:process-input #"{
+  (with-fixture
+   (is-equal `#(ok #"{\"id\":99,\"result\":{\"capabilities\":{},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")
+             (process-input proc (make-simple-initialize-request)))))
+
+(defun make-simple-initialize-request ()
+  #"{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"initialize\",
@@ -36,7 +52,7 @@
 \"rootPath\":null,\"rootUri\":null,
 \"initializationOptions\":{},
 \"capabilities\":{}}
-}")))
+}")
 
 #|
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootPath":"/Users/mbergmann/Development/MySources/lfe-ls/","rootUri":"file:///Users/mbergmann/Development/MySources/lfe-ls","initializationOptions":{},"capabilities":{"workspace":{"applyEdit":true,"executeCommand":{"dynamicRegistration":false},"workspaceEdit":{"documentChanges":false},"didChangeWatchedFiles":{"dynamicRegistration":true},"symbol":{"dynamicRegistration":false},"configuration":true},"textDocument":{"synchronization":{"dynamicRegistration":false,"willSave":true,"willSaveWaitUntil":true,"didSave":true},"completion":{"dynamicRegistration":false,"completionItem":{"snippetSupport":true,"deprecatedSupport":true,"tagSupport":{"valueSet":[1]}},"contextSupport":true},"hover":{"dynamicRegistration":false,"contentFormat":["markdown","plaintext"]},"signatureHelp":{"dynamicRegistration":false,"signatureInformation":{"parameterInformation":{"labelOffsetSupport":true},"activeParameterSupport":true}},"references":{"dynamicRegistration":false},"definition":{"dynamicRegistration":false,"linkSupport":true},"declaration":{"dynamicRegistration":false,"linkSupport":true},"implementation":{"dynamicRegistration":false,"linkSupport":true},"typeDefinition":{"dynamicRegistration":false,"linkSupport":true},"documentSymbol":{"dynamicRegistration":false,"hierarchicalDocumentSymbolSupport":true,"symbolKind":{"valueSet":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]}},"documentHighlight":{"dynamicRegistration":false},"codeAction":{"dynamicRegistration":false,"codeActionLiteralSupport":{"codeActionKind":{"valueSet":["quickfix","refactor","refactor.extract","refactor.inline","refactor.rewrite","source","source.organizeImports"]}},"isPreferredSupport":true},"formatting":{"dynamicRegistration":false},"rangeFormatting":{"dynamicRegistration":false},"rename":{"dynamicRegistration":false},"publishDiagnostics":{"relatedInformation":false,"codeDescriptionSupport":false,"tagSupport":{"valueSet":[1,2]}}},"experimental":{}}}}
