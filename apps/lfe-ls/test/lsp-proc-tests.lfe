@@ -3,44 +3,31 @@
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
-(defmacro with-fixture body
-  `(let ((proc (lsp-proc:start 'null)))
-     (progn
-       ,@body)
-     (gen_server:cast proc 'stop)))
-
-(defmacro process-input (proc input)
-  `(gen_server:call ,proc `#(process-input ,,input)))
-
 (deftest error-on-decoding
-  (with-fixture
-   (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
-             (process-input proc #"{\"Foo\"}"))))
+  (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
+            (lsp-proc:process-input #"{\"Foo\"}")))
 
 (deftest error-invalid-request--method-not-implemented
-  (with-fixture
-   (is-equal `#(ok #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
-             (process-input proc #"{
+  (is-equal `#(ok #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
+            (lsp-proc:process-input #"{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"not-supported\",
 \"params\":{}
-}"))))
+}")))
 
 (deftest process-simple-message
-  (with-fixture
-   (is-equal `#(ok #"{\"id\":99,\"result\":true}")
-             (process-input proc #"{
+  (is-equal `#(ok #"{\"id\":99,\"result\":true}")
+            (lsp-proc:process-input #"{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"test-success\",
 \"params\":{}
-}"))))
+}")))
 
 (deftest process-simple-initialize-message
-  (with-fixture
-   (is-equal `#(ok #"{\"id\":99,\"result\":{\"capabilities\":{},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")
-             (process-input proc (make-simple-initialize-request)))))
+  (is-equal `#(ok #"{\"id\":99,\"result\":{\"capabilities\":{},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")
+            (lsp-proc:process-input (make-simple-initialize-request))))
 
 (defun make-simple-initialize-request ()
   #"{
