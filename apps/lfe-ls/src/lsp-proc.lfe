@@ -19,4 +19,13 @@
          `#(error "Unable to decode json!"))))))
 
 (defun process-method (id method params)
-  `#(ok ,(ljson:encode `(#(#"id" ,id) #(#"result" true)))))
+  `#(ok ,(ljson:encode
+          (case method
+            (#"initialize"
+             `(#(#"id" ,id) #(#"result" ,(initialize-result params))))
+            (_
+             `(#(#"id" ,id) #(#"result" true)))))))
+
+(defun initialize-result (req-params)
+  '(#(#"capabilities" #())
+    #(#"serverInfo" (#(#"name" #"lfe-ls")))))
