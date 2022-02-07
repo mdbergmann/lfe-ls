@@ -15,3 +15,5 @@
 \"method\":\"test-success\",
 \"params\":{}
 }")))
+
+;; add tests for unrecognized request
