@@ -1,2 +1,3 @@
 
-(defrecord proc-state (initialized 'false (boolean)))
+(defrecord lsp-state
+  (initialized 'false (boolean)))

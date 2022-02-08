@@ -48,18 +48,18 @@
   ((`#(socket ,listen-socket))
    (logger:debug "init (server)")
    (gen_server:cast (self) 'accept)
-   `#(ok ,(make-state socket listen-socket)))
+   `#(ok ,(make-ls-state socket listen-socket)))
   ((`#(other))
    ;; used from test
-   `#(ok ,(make-state))))
+   `#(ok ,(make-ls-state))))
 
 (defun %accept-handler (state)
   (logger:debug "waiting for connection...")
   (let ((`#(ok ,accept-socket)
-         (gen_tcp:accept (state-socket state))))
+         (gen_tcp:accept (ls-state-socket state))))
     (logger:debug "connection accepted (server)")
     (lfe-ls-sup:start-socket)
-    `#(noreply ,(set-state-socket state accept-socket))))
+    `#(noreply ,(set-ls-state-socket state accept-socket))))
 
 (defun double-nl () #"\r\n\r\n")
 
@@ -88,17 +88,21 @@ Can be 'call'ed or 'cast'.
 Returns: #(ok new-state)"
   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
   (logger:debug "Received msg: ~p" `(,msg))
-  (let* ((req (state-req state))
-         (sock (state-socket state))
+  (let* ((req (ls-state-req state))
+         (sock (ls-state-socket state))
+         (lsp-state (ls-state-lsp-state state))
          (new-req (case (string:prefix msg "Content-Length: ")
                     ('nomatch (%handle-partial-req msg req))
                     (rest-msg (%handle-new-req rest-msg req)))))
-    (if (%request-complete-p new-req)
-      (case (lsp-proc:process-input (req-data new-req))
-        ;; probably we have more cases
-        (`#(ok ,process-out)
-         (response-sender:send-response sock process-out))))
-    `#(ok ,(set-state-req state new-req))))
+    `#(ok ,(if (%request-complete-p new-req)
+             (case (lsp-proc:process-input (req-data new-req) lsp-state)
+               ;; probably we have more cases
+               (`#(ok ,lsp-proc-output ,new-lsp-state)
+                (response-sender:send-response sock lsp-proc-output)
+                (clj:-> state
+                        (set-ls-state-req new-req)
+                        (set-ls-state-lsp-state new-lsp-state))))
+             (set-ls-state-req state new-req)))))
 
 (defun handle_cast
   (('accept state)

@@ -1,10 +1,12 @@
-;;; Records for use by lfe-ls
+
+(include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 (defrecord req
   (expected-len 0)
   (current-len 0)
   (data #""))
 
-(defrecord state
+(defrecord ls-state
   (socket 'nil)
-  (req (make-req)))
+  (req (make-req))
+  (lsp-state (make-lsp-state)))

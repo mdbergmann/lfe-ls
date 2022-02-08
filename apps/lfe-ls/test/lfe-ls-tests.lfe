@@ -11,7 +11,8 @@
   `(progn
      (meck:new 'lsp-proc)
      (meck:new 'response-sender)
-     (let ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '())))
+     (let ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
+           (lsp-model (make-lsp-state)))
        (try
            (progn
              ,@body)
@@ -28,12 +29,14 @@
 
 (deftest test-receive-package--full-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in) `#(ok #"{\"Pong\"}")))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
+                                           `#(ok #"{\"Pong\"}"
+                                                 ,(make-lsp-state initialized 'true))))
    (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
 
    (let* ((response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
-     (is-match `#(ok #(state nil #(req 8 8 #"{\"Ping\"}"))) response)
-     (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}")))
+     (is-equal `#(ok #(ls-state nil #(req 8 8 #"{\"Ping\"}") #(lsp-state true))) response)
+     (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}" lsp-model)))
      (is (meck:validate 'lsp-proc))
      (is (meck:called 'response-sender 'send-response '(_ #"{\"Pong\"}")))
      (is (meck:validate 'response-sender)))))
@@ -42,42 +45,42 @@
 
 (deftest test-receive-package--incomplete-req--replaced-by-new-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in) `#(ok #"{\"Pong\"}")))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state) `#(ok #"{\"Pong\"}" ,lsp-state)))
    (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
 
    (let* ((_ (gen_server:call pid `#(received #"Content-Length: 13\r\n\r\n{\"Hello\"}")))
           (response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
-     (is-match `#(ok #(state nil #(req 8 8 #"{\"Ping\"}"))) response)
-     (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}")))
+     (is-equal `#(ok #(ls-state nil #(req 8 8 #"{\"Ping\"}") _)) response)
+     (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}" lsp-model)))
      (is (meck:validate 'lsp-proc))
      (is (meck:called 'response-sender 'send-response '(_ #"{\"Pong\"}")))
      (is (meck:validate 'response-sender)))))
 
 (deftest test-receive-package--partial-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in) `#(ok #"{\"WorldHello\"}")))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state) `#(ok #"{\"WorldHello\"}" ,lsp-state)))
    (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
 
    (let* ((response1 (gen_server:call pid `#(received #"Content-Length: 14\r\n\r\n{\"Hello")))
           (response2 (gen_server:call pid `#(received #"World\"}"))))
-     (is-match `#(ok #(state nil #(req 14 7 #"{\"Hello"))) response1)
-     (is-match `#(ok #(state nil #(req 14 14 #"{\"HelloWorld\"}"))) response2)
-     (is (meck:called 'lsp-proc 'process-input '(#"{\"HelloWorld\"}")))
+     (is-match `#(ok #(ls-state nil #(req 14 7 #"{\"Hello") _)) response1)
+     (is-match `#(ok #(ls-state nil #(req 14 14 #"{\"HelloWorld\"}") _)) response2)
+     (is (meck:called 'lsp-proc 'process-input '(#"{\"HelloWorld\"}" lsp-model)))
      (is (meck:validate 'lsp-proc))
      (is (meck:called 'response-sender 'send-response '(_ #"{\"WorldHello\"}")))
      (is (meck:validate 'response-sender)))))
 
 (deftest test-receive-package--real-partial-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in) `#(ok #"dummy")))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state) `#(ok #"dummy" ,lsp-state)))
    (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
 
    (let* ((`#(ok ,state1) (gen_server:call pid `#(received ,(start-json-msg))))
           (`#(ok ,state2) (gen_server:call pid `#(received ,(json-msg-part2)))))
-     (is-match (tuple 'state 'nil (tuple 'req 2027 1436 _)) state1)
-     (is-match (tuple 'state 'nil (tuple 'req 2027 2027 _)) state2)
-     (is-equal (json-msg-part1) (req-data (state-req state1)))
-     (is-equal (full-json-msg) (req-data (state-req state2))))))
+     (is-match (tuple 'ls-state 'nil (tuple 'req 2027 1436 _) _) state1)
+     (is-match (tuple 'ls-state 'nil (tuple 'req 2027 2027 _) _) state2)
+     (is-equal (json-msg-part1) (req-data (ls-state-req state1)))
+     (is-equal (full-json-msg) (req-data (ls-state-req state2))))))
 
 (defun start-json-msg ()
   (concat-binary (preamble-json-msg) (json-msg-part1)))
