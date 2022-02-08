@@ -57,5 +57,10 @@
                              #(#"message" ,err-msg)))))
 
 (defun %make-initialize-result (req-params)
-  '(#(#"capabilities" #())
+  `(,(%make-capabilities)
     #(#"serverInfo" (#(#"name" #"lfe-ls")))))
+
+(defun %make-capabilities ()
+  #(#"capabilities" (#(#"textDocument"
+                       (#(#"completion"
+                          (#(#"dynamicRegistration" false))))))))
