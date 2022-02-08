@@ -33,7 +33,7 @@
 
 (deftest process-simple-initialize-message
   (is-equal `#(ok #"{\"id\":99,\"result\":{\"capabilities\":{},\"serverInfo\":{\"name\":\"lfe-ls\"}}}"
-                  ,(make-lsp-state))
+                  ,(make-lsp-state initialized 'true))
             (lsp-proc:process-input (make-simple-initialize-request)
                                     (make-lsp-state))))
 

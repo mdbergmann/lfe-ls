@@ -30,17 +30,24 @@
     (`#(ok ,response ,state) `#(ok ,(ljson:encode response) ,state))))
 
 (defun %process-method (id method params state)
-  `#(ok ,(case method
+  (let ((`#(,response ,new-state)
+         (case method
            (#"initialize"
-            (%make-result-response id (%make-initialize-result params)))
+            (case (%on-initialize id params)
+              (`#(ok ,response)
+               `#(,response ,(set-lsp-state-initialized state 'true)))))
            (#"test-success"
-            (%make-result-response id 'true))
+            `#(,(%make-result-response id 'true) ,state))
            (_
-            (%make-error-response id
-                                  (%req-invalid-request-error)
-                                  (concat-binary #"Method not supported: '"
-                                                 (concat-binary method #"'!")))))
-        ,state))
+            `#(,(%make-error-response id
+                                      (%req-invalid-request-error)
+                                      (concat-binary #"Method not supported: '"
+                                                     (concat-binary method #"'!")))
+               ,state)))))
+    `#(ok ,response ,new-state)))
+
+(defun %on-initialize (id params)
+  `#(ok ,(%make-result-response id (%make-initialize-result params))))
 
 (defun %make-result-response (id result)
   `(#(#"id" ,id) #(#"result" ,result)))
