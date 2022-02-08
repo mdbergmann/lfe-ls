@@ -14,10 +14,10 @@
    (code_change 3))
   ;; server API
   (export
-   (pid 0))
-  ;; utils
-  (export
-   (concat-binary 2)))
+   (pid 0)))
+
+(include-lib "apps/lfe-ls/include/utils.lfe")
+(include-lib "apps/lfe-ls/include/ls-model.lfe")
 
 ;;; ----------------
 ;;; config functions
@@ -25,12 +25,6 @@
 
 (defun SERVER () (MODULE))
 (defun genserver-opts () '())
-
-;;; -----------------
-;;; records
-;;; -----------------
-
-(include-lib "apps/lfe-ls/include/ls-model.lfe")
 
 ;;; -------------------------
 ;;; gen_server implementation
@@ -146,14 +140,6 @@ Returns: #(ok new-state)"
 
 (defun code_change (_old-version state _extra)
   `#(ok ,state))
-
-;;; private API
-
-(defun concat-binary (bin1 bin2)
-  (binary (bin1 binary) (bin2 binary)))
-
-(defun binary-to-string (bin)
-  (lists:flatten (io_lib:format "~p" `(,bin))))
 
 ;;; our server API
 

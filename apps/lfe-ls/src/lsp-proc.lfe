@@ -1,8 +1,9 @@
 (defmodule lsp-proc
   (export
-   (process-input 1))
-  (import (from lfe-ls
-                (concat-binary 2))))
+   (process-input 1)))
+
+(include-lib "apps/lfe-ls/include/utils.lfe")
+(include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 (defun %req-parse-error () -32700)
 (defun %req-invalid-request-error () -32600)

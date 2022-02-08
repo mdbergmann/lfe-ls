@@ -48,8 +48,9 @@
 #|
 todos:
 
-- generate proper json response
-- generate proper json response on encoding error
-- add tests for unrecognized request
+OK - generate proper json response
+OK - generate proper json response on encoding error
+OK - add tests for unrecognized request
+=> - pass in state and return state from server process.
 
 |#
