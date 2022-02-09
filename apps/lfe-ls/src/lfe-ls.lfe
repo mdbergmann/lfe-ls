@@ -98,15 +98,18 @@ Returns: #(ok new-state)"
                     ('nomatch (%handle-partial-req msg req))
                     (rest-msg (%handle-new-req rest-msg req)))))
     `#(ok ,(if (%request-complete-p new-req)
-             (case (lsp-proc:process-input (req-data new-req) lsp-state)
-               ;; probably we have more cases
-               (`#(ok ,lsp-proc-output ,new-lsp-state)
-                (logger:debug "lsp output: ~p" `(,lsp-proc-output))
-                (response-sender:send-response sock lsp-proc-output)
-                (logger:debug "Response sent!")
-                (clj:-> state
-                        (set-ls-state-req new-req)
-                        (set-ls-state-lsp-state new-lsp-state))))
+             (let ((complete-req (req-data new-req)))
+               (logger:info "Complete request: ~p" `(,complete-req))
+               (logger:info "Complete request of size: ~p" `(,(byte_size complete-req)))
+               (case (lsp-proc:process-input complete-req lsp-state)
+                 ;; probably we have more cases
+                 (`#(ok ,lsp-proc-output ,new-lsp-state)
+                  (logger:debug "lsp output: ~p" `(,lsp-proc-output))
+                  (response-sender:send-response sock lsp-proc-output)
+                  (logger:debug "Response sent!")
+                  (clj:-> state
+                          (set-ls-state-req (make-req))
+                          (set-ls-state-lsp-state new-lsp-state)))))
              (set-ls-state-req state new-req)))))
 
 (defun handle_cast

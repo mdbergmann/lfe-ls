@@ -11,12 +11,17 @@
 (defun process-input (input state)
   (case (try
             (let ((json-input (ljson:decode input)))
+              (logger:debug "json-input: ~p" `(,json-input))
               (case json-input
                 (`(#(#"jsonrpc" #"2.0")
                    #(#"id" ,req-id)
                    #(#"method" ,req-method)
                    #(#"params" ,req-params))
                  (%process-method req-id req-method req-params state))
+                (`(#(#"jsonrpc" #"2.0")
+                   #(#"method" ,req-method)
+                   #(#"params" ,req-params))
+                 (%process-method 'null req-method req-params state))
                 (_
                  (logger:warning "Invalid lsp header!")
                  `#(ok ,(%make-error-response 'null
