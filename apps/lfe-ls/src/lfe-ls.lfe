@@ -57,6 +57,7 @@
   (logger:debug "waiting for connection...")
   (let ((`#(ok ,accept-socket)
          (gen_tcp:accept (ls-state-socket state))))
+    (inet:setopts accept-socket '(#(active once)))
     (logger:debug "connection accepted (server)")
     (lfe-ls-sup:start-socket)
     `#(noreply ,(set-ls-state-socket state accept-socket))))
@@ -67,6 +68,7 @@
   (== (req-expected-len req) (req-current-len req)))
 
 (defun %handle-new-req (msg req)
+  (logger:debug "handle-new-req...")
   (case (binary:split msg (double-nl))
     (`(,len ,rest)
      (let* ((len-and-nl (binary (len binary)
@@ -78,6 +80,7 @@
                  data proper-rest)))))
 
 (defun %handle-partial-req (msg req)
+  (logger:debug "handle-partial-req...")
   (clj:-> req
           (set-req-current-len (+ (req-current-len req) (byte_size msg)))
           (set-req-data (concat-binary (req-data req) msg))))
@@ -98,7 +101,9 @@ Returns: #(ok new-state)"
              (case (lsp-proc:process-input (req-data new-req) lsp-state)
                ;; probably we have more cases
                (`#(ok ,lsp-proc-output ,new-lsp-state)
+                (logger:debug "lsp output: ~p" `(,lsp-proc-output))
                 (response-sender:send-response sock lsp-proc-output)
+                (logger:debug "Response sent!")
                 (clj:-> state
                         (set-ls-state-req new-req)
                         (set-ls-state-lsp-state new-lsp-state))))
@@ -125,10 +130,9 @@ Returns: #(ok new-state)"
 
 (defun handle_info
   ((`#(tcp ,socket ,msg) state)
-   (logger:debug "received msg len: ~p" `(,(byte_size msg)))
-   (logger:debug "received msg: ~p" `(,msg))
-   (gen_server:cast (self) `#(received ,msg))
-   `#(noreply ,state))
+   (let ((`#(,code ,new-state) (%on-tcp-receive msg state)))
+     (inet:setopts socket '(#(active once)))
+     `#(noreply ,new-state)))
   ((`#(tcp_error ,_socket ,_) state)
    (logger:debug "tcp-error")
    `#(stop normal ,state))
