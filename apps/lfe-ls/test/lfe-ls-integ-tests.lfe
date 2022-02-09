@@ -4,7 +4,7 @@
 (include-lib "ltest/include/ltest-macros.lfe")
 (include-lib "apps/lfe-ls/include/utils.lfe")
 
-(deftest process-simple-initialize-message
+(deftest process-initialize-message
   (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 5555 '(#(active false)))))
     (gen_tcp:send socket (make-simple-initialize-request))
     (let (((tuple 'ok response) (gen_tcp:recv socket 0)))

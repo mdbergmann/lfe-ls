@@ -5,7 +5,6 @@
 
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
-
 (deftest error-on-decoding
   (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}"
                   ,(make-lsp-state))
@@ -20,6 +19,13 @@
 \"method\":\"not-supported\",
 \"params\":{}
 }" (make-lsp-state))))
+
+(deftest error-invalid-request--invalid-request
+  (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32600,\"message\":\"Invalid LSP header!\"}}"
+                  ,(make-lsp-state))
+            (lsp-proc:process-input #"{
+\"jsonrpc\":\"2.0\",
+\"method\":\"not-supported\"}" (make-lsp-state))))
 
 (deftest process-simple-message
   (is-equal `#(ok #"{\"id\":99,\"result\":true}"
@@ -63,5 +69,5 @@ OK - generate proper json response
 OK - generate proper json response on encoding error
 OK - add tests for unrecognized request
 OK - pass in state and return state from server process.
-
+OK - unrecognized request sends lsp error response
 |#

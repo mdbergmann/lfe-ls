@@ -17,7 +17,12 @@
                    #(#"method" ,req-method)
                    #(#"params" ,req-params))
                  (%process-method req-id req-method req-params state))
-                (_ `#(warn "Unrecognized request!"))))
+                (_
+                 (logger:warning "Invalid lsp header!")
+                 `#(ok ,(%make-error-response 'null
+                                              (%req-invalid-request-error)
+                                              #"Invalid LSP header!")
+                       ,state))))
           (catch
             ((tuple type value stacktrace)
              (progn
