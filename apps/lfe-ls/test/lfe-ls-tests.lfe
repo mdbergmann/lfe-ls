@@ -96,3 +96,17 @@
 
 (defun json-msg-part2 ()
   #"6,17,18,19,20,21,22,23,24,25,26]}},\"documentHighlight\":{\"dynamicRegistration\":false},\"codeAction\":{\"dynamicRegistration\":false,\"codeActionLiteralSupport\":{\"codeActionKind\":{\"valueSet\":[\"quickfix\",\"refactor\",\"refactor.extract\",\"refactor.inline\",\"refactor.rewrite\",\"source\",\"source.organizeImports\"]}},\"isPreferredSupport\":true},\"formatting\":{\"dynamicRegistration\":false},\"rangeFormatting\":{\"dynamicRegistration\":false},\"rename\":{\"dynamicRegistration\":false},\"publishDiagnostics\":{\"relatedInformation\":false,\"codeDescriptionSupport\":false,\"tagSupport\":{\"valueSet\":[1,2]}}},\"experimental\":{}}}}")
+
+
+#|
+todos:
+
+OK - generate proper json response
+OK - generate proper json response on encoding error
+OK - add tests for unrecognized request
+OK - pass in state and return state from server process.
+OK - unrecognized request sends lsp error response
+- implement 'initialized'
+- change 'initialize' response for proper completion server capability
+- implement 'shutdown'
+|#

@@ -43,7 +43,7 @@
   (let ((`#(,response ,new-state)
          (case method
            (#"initialize"
-            (case (%on-initialize id params)
+            (case (%on-initialize-req id params)
               (`#(ok ,response)
                `#(,response ,(set-lsp-state-initialized state 'true)))))
            (#"test-success"
@@ -56,7 +56,7 @@
                ,state)))))
     `#(ok ,response ,new-state)))
 
-(defun %on-initialize (id params)
+(defun %on-initialize-req (id params)
   `#(ok ,(%make-result-response id (%make-initialize-result params))))
 
 (defun %make-result-response (id result)

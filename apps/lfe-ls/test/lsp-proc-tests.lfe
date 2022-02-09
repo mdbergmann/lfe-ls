@@ -64,6 +64,7 @@
 \"capabilities\":{}}
 }")
 
+
 #|
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootPath":"/Users/mbergmann/Development/MySources/lfe-ls/","rootUri":"file:///Users/mbergmann/Development/MySources/lfe-ls","initializationOptions":{},
 "capabilities":{
@@ -158,18 +159,4 @@
                      {<<\"codeDescriptionSupport\">>,false},\
                      {<<\"tagSupport\">>,[{<<\"valueSet\">>,[1,2]}]}]}]},\
 {<<\"experimental\">>,[{}]}]}]}]"
-|#
-
-
-#|
-todos:
-
-OK - generate proper json response
-OK - generate proper json response on encoding error
-OK - add tests for unrecognized request
-OK - pass in state and return state from server process.
-OK - unrecognized request sends lsp error response
-- implement 'initialized'
-- change 'initialize' response for proper completion server capability
-- implement 'shutdown'
 |#
