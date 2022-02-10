@@ -30,8 +30,8 @@
 (deftest test-receive-package--full-req
   (with-fixture
    (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
-                                           `#(ok #"{\"Pong\"}"
-                                                 ,(make-lsp-state initialized 'true))))
+                                           `#(#(reply #"{\"Pong\"}")
+                                              ,(make-lsp-state initialized 'true))))
    (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
 
    (let* ((response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
@@ -41,11 +41,24 @@
      (is (meck:called 'response-sender 'send-response '(_ #"{\"Pong\"}")))
      (is (meck:validate 'response-sender)))))
 
-;; todo: add tests for error resppnse from lsp-proc.
+(deftest test-receive-package--full-req--noreply
+  (with-fixture
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
+                                           `#(#(noreply #"{\"Pong\"}")
+                                              ,(make-lsp-state initialized 'true))))
+   (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
+
+   (let* ((response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
+     (is-equal `#(ok #(ls-state nil #(req 8 8 #"{\"Ping\"}") #(lsp-state true))) response)
+     (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}" lsp-model)))
+     (is (meck:validate 'lsp-proc))
+     (is (meck:called 'response-sender 'send-response '(_ #"{\"Pong\"}")))
+     (is (meck:validate 'response-sender)))))
 
 (deftest test-receive-package--incomplete-req--replaced-by-new-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state) `#(ok #"{\"Pong\"}" ,lsp-state)))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
+                                           `#(#(reply #"{\"Pong\"}") ,lsp-state)))
    (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
 
    (let* ((_ (gen_server:call pid `#(received #"Content-Length: 13\r\n\r\n{\"Hello\"}")))
@@ -58,7 +71,8 @@
 
 (deftest test-receive-package--partial-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state) `#(ok #"{\"WorldHello\"}" ,lsp-state)))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
+                                           `#(#(reply #"{\"WorldHello\"}") ,lsp-state)))
    (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
 
    (let* ((response1 (gen_server:call pid `#(received #"Content-Length: 14\r\n\r\n{\"Hello")))
@@ -72,7 +86,8 @@
 
 (deftest test-receive-package--real-partial-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state) `#(ok #"dummy" ,lsp-state)))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
+                                           `#(#(reply #"dummy") ,lsp-state)))
    (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
 
    (let* ((`#(ok ,state1) (gen_server:call pid `#(received ,(start-json-msg))))
@@ -106,7 +121,7 @@ OK - generate proper json response on encoding error
 OK - add tests for unrecognized request
 OK - pass in state and return state from server process.
 OK - unrecognized request sends lsp error response
-- implement 'initialized'
+=> - implement 'initialized' (notification)
 - change 'initialize' response for proper completion server capability
 - implement 'shutdown'
 |#

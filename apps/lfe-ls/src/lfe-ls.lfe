@@ -103,10 +103,15 @@ Returns: #(ok new-state)"
                (logger:info "Complete request of size: ~p" `(,(byte_size complete-req)))
                (case (lsp-proc:process-input complete-req lsp-state)
                  ;; probably we have more cases
-                 (`#(ok ,lsp-proc-output ,new-lsp-state)
+                 (`#(#(reply ,lsp-proc-output) ,new-lsp-state)
                   (logger:debug "lsp output: ~p" `(,lsp-proc-output))
                   (response-sender:send-response sock lsp-proc-output)
                   (logger:debug "Response sent!")
+                  (clj:-> state
+                          (set-ls-state-req (make-req))
+                          (set-ls-state-lsp-state new-lsp-state)))
+                 (`#(#(noreply ,_) ,new-lsp-state)
+                  (logger:debug "lsp output with noreply")
                   (clj:-> state
                           (set-ls-state-req (make-req))
                           (set-ls-state-lsp-state new-lsp-state)))))

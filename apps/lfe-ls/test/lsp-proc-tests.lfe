@@ -6,13 +6,15 @@
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 (deftest error-on-decoding
-  (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}"
-                  ,(make-lsp-state))
+  (is-equal `#(#(reply
+                 #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
+               ,(make-lsp-state))
             (lsp-proc:process-input #"{\"Foo\"}" (make-lsp-state))))
 
 (deftest error-invalid-request--method-not-implemented
-  (is-equal `#(ok #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}"
-                  ,(make-lsp-state))
+  (is-equal `#(#(reply
+                 #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
+               ,(make-lsp-state))
             (lsp-proc:process-input #"{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
@@ -21,8 +23,9 @@
 }" (make-lsp-state))))
 
 (deftest error-invalid-request--method-not-implemented--no-id
-  (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}"
-                  ,(make-lsp-state))
+  (is-equal `#(#(reply
+                 #"{\"id\":null,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
+               ,(make-lsp-state))
             (lsp-proc:process-input #"{
 \"jsonrpc\":\"2.0\",
 \"method\":\"not-supported\",
@@ -30,15 +33,16 @@
 }" (make-lsp-state))))
 
 (deftest error-invalid-request--invalid-request
-  (is-equal `#(ok #"{\"id\":null,\"error\":{\"code\":-32600,\"message\":\"Invalid LSP header!\"}}"
-                  ,(make-lsp-state))
+  (is-equal `#(#(reply
+                 #"{\"id\":null,\"error\":{\"code\":-32600,\"message\":\"Invalid LSP header!\"}}")
+               ,(make-lsp-state))
             (lsp-proc:process-input #"{
 \"jsonrpc\":\"2.0\",
 \"method\":\"not-supported\"}" (make-lsp-state))))
 
 (deftest process-simple-message
-  (is-equal `#(ok #"{\"id\":99,\"result\":true}"
-                  ,(make-lsp-state))
+  (is-equal `#(#(reply #"{\"id\":99,\"result\":true}")
+               ,(make-lsp-state))
             (lsp-proc:process-input #"{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
@@ -47,9 +51,15 @@
 }" (make-lsp-state))))
 
 (deftest process-simple-initialize-message
-  (is-equal `#(ok #"{\"id\":99,\"result\":{\"capabilities\":{\"textDocument\":{\"completion\":{\"dynamicRegistration\":false}}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}"
-                  ,(make-lsp-state initialized 'true))
+  (is-equal `#(#(reply
+                 #"{\"id\":99,\"result\":{\"capabilities\":{\"textDocument\":{\"completion\":{\"dynamicRegistration\":false}}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")
+               ,(make-lsp-state initialized 'true))
             (lsp-proc:process-input (make-simple-initialize-request)
+                                    (make-lsp-state))))
+
+(deftest process-initialized-message
+  (is-equal `#(#(noreply #"null") ,(make-lsp-state))
+            (lsp-proc:process-input (make-initialized-notify-request)
                                     (make-lsp-state))))
 
 (defun make-simple-initialize-request ()
@@ -64,6 +74,12 @@
 \"capabilities\":{}}
 }")
 
+(defun make-initialized-notify-request ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"method\":\"initialized\",
+\"params\":{}
+}")
 
 #|
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootPath":"/Users/mbergmann/Development/MySources/lfe-ls/","rootUri":"file:///Users/mbergmann/Development/MySources/lfe-ls","initializationOptions":{},
