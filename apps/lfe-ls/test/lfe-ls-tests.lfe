@@ -53,6 +53,7 @@
      (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}" lsp-model)))
      (is (meck:validate 'lsp-proc))
      (is (meck:called 'response-sender 'send-response '(_ #"{\"Pong\"}")))
+     (is-equal 0 (meck:num_calls 'response-sender '_ '_))
      (is (meck:validate 'response-sender)))))
 
 (deftest test-receive-package--incomplete-req--replaced-by-new-req
@@ -121,7 +122,7 @@ OK - generate proper json response on encoding error
 OK - add tests for unrecognized request
 OK - pass in state and return state from server process.
 OK - unrecognized request sends lsp error response
-=> - implement 'initialized' (notification)
+OK - implement 'initialized' (notification)
 - change 'initialize' response for proper completion server capability
 - implement 'shutdown'
 |#
