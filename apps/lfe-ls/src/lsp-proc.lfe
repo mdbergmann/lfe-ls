@@ -98,6 +98,7 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
                      uri
                      (make-document uri uri version version text text)))))
       (_
+       (logger:warning "Missing 'textDocument' param!")
        `#(#(noreply null) ,state)))))
 
 ;; response factories

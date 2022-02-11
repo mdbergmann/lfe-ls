@@ -125,8 +125,9 @@ OK - unrecognized request sends lsp error response
 OK - implement 'initialized' (notification)
 OK - change 'initialize' response for proper completion server capability
 OK - don't send error on unknown methods.
-=> - implement 'textDocument/didOpen' (notification)
-- implement 'textDocument/didChange' (notification)
+OK - implement 'textDocument/didOpen' (notification)
+=> - implement 'textDocument/didChange' (notification)
+- implement 'textDocument/didClose' (notification)
 - implement 'textDocument/completion' with dummy response first
 - implement 'shutdown'
 |#
