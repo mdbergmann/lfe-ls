@@ -52,7 +52,7 @@
 
 (deftest process-simple-initialize-message
   (is-equal `#(#(reply
-                 #"{\"id\":99,\"result\":{\"capabilities\":{\"textDocument\":{\"completion\":{\"dynamicRegistration\":false}}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")
+                 #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")
                ,(make-lsp-state initialized 'true))
             (lsp-proc:process-input (make-simple-initialize-request)
                                     (make-lsp-state))))

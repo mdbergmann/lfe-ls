@@ -9,7 +9,7 @@
     (gen_tcp:send socket (make-simple-initialize-request))
     (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
       (logger:notice "resp: ~p" `(,response))
-      (is-equal "Content-Length: 128\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"textDocument\":{\"completion\":{\"dynamicRegistration\":false}}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))))
+      (is-equal "Content-Length: 114\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))))
 
 (defun make-simple-initialize-request ()
   #"Content-Length: 181\r\n\r\n{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"initialize\",\"params\":{\"processId\":null,\"clientInfo\":{\"name\":\"eglot\"},\"rootPath\":null,\"rootUri\":null,\"initializationOptions\":{},\"capabilities\":{}}}")

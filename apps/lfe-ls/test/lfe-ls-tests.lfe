@@ -123,6 +123,10 @@ OK - add tests for unrecognized request
 OK - pass in state and return state from server process.
 OK - unrecognized request sends lsp error response
 OK - implement 'initialized' (notification)
-- change 'initialize' response for proper completion server capability
+OK - change 'initialize' response for proper completion server capability
+- don't send error on unknown methods.
 - implement 'shutdown'
+- implement 'textDocument/didOpen' (notification)
+- implement 'textDocument/didChange' (notification)
+- implement 'textDocument/completion' with dummy response first
 |#

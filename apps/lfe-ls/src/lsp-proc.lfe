@@ -37,16 +37,17 @@
                                                  (%req-parse-error)
                                                  #"Error on parsing json!"))
                   ,state)))))
-    (`#(#(,code ,response) ,state) `#(#(,code ,(ljson:encode response)) ,state))))
+    (`#(#(,code ,response) ,state)
+     `#(#(,code ,(ljson:encode response)) ,state))))
 
 (defun %process-method (id method params state)
   "This function is the main lsp 'method' dispatcher.
-It returns:
 
+It returns:
 `(tuple (tuple code response) new-state)`
 where `code' is either `reply' or `noreply' indicating that the response has to be sent back to the requester or not. LSP notifications don't require reply but requests do.
 `response' is the generated lsp response for the received request.
-"
+`new-state' is for state changes that need to be transported back to the state keeper."
   (case method
     (#"initialize"
      (case (%on-initialize-req id params)
@@ -69,6 +70,8 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
 (defun %on-initialized-req (id params)
   `#(noreply null))
 
+;; response factories
+
 (defun %make-result-response (id result)
   `(#(#"id" ,id) #(#"result" ,result)))
 
@@ -81,6 +84,5 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
     #(#"serverInfo" (#(#"name" #"lfe-ls")))))
 
 (defun %make-capabilities ()
-  #(#"capabilities" (#(#"textDocument"
-                       (#(#"completion"
-                          (#(#"dynamicRegistration" false))))))))
+  #(#"capabilities" (#(#"completionProvider"
+                       (#(#"resolveProvider" true))))))
