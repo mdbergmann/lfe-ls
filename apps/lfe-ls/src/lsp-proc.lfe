@@ -66,6 +66,8 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
      `#(,(%on-initialized-req id params) ,state))
     (#"textDocument/didOpen"
      (%on-textDocument/didOpen-req id params state))
+    (#"textDocument/didChange"
+     (%on-textDocument/didChange-req id params state))
     (#"test-success"
      `#(#(reply ,(%make-result-response id 'true)) ,state))
     (_
@@ -87,19 +89,35 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
 (defun %on-textDocument/didOpen-req (id params state)
   (let ((state-documents (lsp-state-documents state)))
     (case params
-      (`(#(#"textDocument" (#(#"uri" ,uri)
-                            #(#"languageId" ,_)
-                            #(#"version" ,version)
-                            #(#"text" ,text))))
-       `#(#(noreply null)
-          ,(set-lsp-state-documents
-            state
-            (map-set state-documents
-                     uri
-                     (make-document uri uri version version text text)))))
+      (`(#(#"textDocument" ,text-document))
+       (let ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
+             (`#(#"version" ,version) (find-tkey #"version" text-document))
+             (`#(#"text" ,text) (find-tkey #"text" text-document)))
+         `#(#(noreply null)
+            ,(set-lsp-state-documents
+              state
+              (map-set state-documents
+                       uri
+                       (make-document uri uri version version text text))))))
       (_
        (logger:warning "Missing 'textDocument' param!")
        `#(#(noreply null) ,state)))))
+
+(defun %on-textDocument/didChange-req (id params state)
+  (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
+        (`#(#"contentChanges" ,content-changes) (find-tkey #"contentChanges" params)))
+    (let ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
+          (`#(#"version" ,version) (find-tkey #"version" text-document)))      
+      (let* ((state-documents (lsp-state-documents state))
+             (document (map-get state-documents uri)))
+        `#(#(noreply null)
+           ,(set-lsp-state-documents
+             state
+             (map-set state-documents
+                      uri
+                      (clj:-> document
+                              (set-document-text #"thedocument-text")
+                              (set-document-version 2)))))))))
 
 ;; response factories
 

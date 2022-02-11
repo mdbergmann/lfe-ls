@@ -4,6 +4,7 @@
 (include-lib "ltest/include/ltest-macros.lfe")
 
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
+(include-lib "apps/lfe-ls/include/utils.lfe")
 
 (deftest error-on-decoding
   (is-equal `#(#(reply
@@ -82,6 +83,17 @@
                                                                   2
                                                                   #"the-document-text2"))))))
 
+(deftest process-textDocument/didChange-message
+  ;; inject document
+  (let* ((state (make-lsp-state))
+         (new-state (tcdr (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
+                                                  state))))
+    (is-equal `#(#(noreply #"null")
+                 #(lsp-state false #M(#"file:///foobar.lfe"
+                                      #(document #"file:///foobar.lfe" 2 #"thedocument-text"))))
+              (lsp-proc:process-input (make-simple-textDocument/didChange-request)
+                                      new-state))))
+
 (defun make-simple-initialize-request ()
   #"{
 \"jsonrpc\":\"2.0\",
@@ -106,101 +118,30 @@
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"textDocument/didOpen\",
-\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"languageId\":\"lfe\",\"version\":1,\"text\":\"the-document-text\"}}
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"languageId\":\"lfe\",\"text\":\"the-document-text\"}}
+}")
+
+(defun make-simple-textDocument/didChange-request ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/didChange\",
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"version\":2},\"contentChanges\":[{\"range\":{\"start\":{\"line\":1,\"character\":1},\"end\":{\"line\":1,\"character\":4}},\"text\":\"hed\"}]}
 }")
 
 #|
+initialize request:
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootPath":"/Users/mbergmann/Development/MySources/lfe-ls/","rootUri":"file:///Users/mbergmann/Development/MySources/lfe-ls","initializationOptions":{},
 "capabilities":{
 "workspace":{"applyEdit":true,"executeCommand":{"dynamicRegistration":false},"workspaceEdit":{"documentChanges":false},"didChangeWatchedFiles":{"dynamicRegistration":true},"symbol":{"dynamicRegistration":false},"configuration":true},
 "textDocument":{"synchronization":{"dynamicRegistration":false,"willSave":true,"willSaveWaitUntil":true,"didSave":true},"completion":{"dynamicRegistration":false,"completionItem":{"snippetSupport":true,"deprecatedSupport":true,"tagSupport":{"valueSet":[1]}},"contextSupport":true},"hover":{"dynamicRegistration":false,"contentFormat":["markdown","plaintext"]},"signatureHelp":{"dynamicRegistration":false,"signatureInformation":{"parameterInformation":{"labelOffsetSupport":true},"activeParameterSupport":true}},"references":{"dynamicRegistration":false},"definition":{"dynamicRegistration":false,"linkSupport":true},"declaration":{"dynamicRegistration":false,"linkSupport":true},"implementation":{"dynamicRegistration":false,"linkSupport":true},"typeDefinition":{"dynamicRegistration":false,"linkSupport":true},"documentSymbol":{"dynamicRegistration":false,"hierarchicalDocumentSymbolSupport":true,"symbolKind":{"valueSet":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]}},"documentHighlight":{"dynamicRegistration":false},"codeAction":{"dynamicRegistration":false,"codeActionLiteralSupport":{"codeActionKind":{"valueSet":["quickfix","refactor","refactor.extract","refactor.inline","refactor.rewrite","source","source.organizeImports"]}},"isPreferredSupport":true},"formatting":{"dynamicRegistration":false},"rangeFormatting":{"dynamicRegistration":false},"rename":{"dynamicRegistration":false},"publishDiagnostics":{"relatedInformation":false,"codeDescriptionSupport":false,"tagSupport":{"valueSet":[1,2]}}},"experimental":{}}}}
-|#
 
-#|
-2022-02-09 22:04:09 INFO <0.1080.0> [:] \x{25B8} text="Complete request of size: 52" 
-2022-02-09 22:04:09 DEBUG <0.1080.0> [:] \x{25B8} text="json-input: [{<<\"jsonrpc\">>,<<\"2.0\">>},\
-             {<<\"method\">>,<<\"initialized\">>},\
-             {<<\"params\">>,[{}]}]" 
-2022-02-09 22:04:09 INFO <0.1080.0> [:] \x{25B8} text="Complete request of size: 2027" 
-2022-02-09 22:04:09 DEBUG <0.1080.0> [:] \x{25B8} text="json-input: [{<<\"jsonrpc\">>,<<\"2.0\">>},\
-             {<<\"id\">>,1},\
-             {<<\"method\">>,<<\"initialize\">>},\
-             {<<\"params\">>,\
-              [{<<\"processId\">>,null},\
-               {<<\"rootPath\">>,\
-                <<\"/Users/mbergmann/Development/MySources/lfe-ls/\">>},\
-               {<<\"rootUri\">>,\
-                <<\"file:///Users/mbergmann/Development/MySources/lfe-ls\">>},\
-               {<<\"initializationOptions\">>,[{}]},\
-               {<<\"capabilities\">>,\
-                [{<<\"workspace\">>,\
-                  [{<<\"applyEdit\">>,true},\
-                   {<<\"executeCommand\">>,[{<<\"dynamicRegistration\">>,false}]},\
-                   {<<\"workspaceEdit\">>,[{<<\"documentChanges\">>,false}]},\
-                   {<<\"didChangeWatchedFiles\">>,\
-                    [{<<\"dynamicRegistration\">>,true}]},\
-                   {<<\"symbol\">>,[{<<\"dynamicRegistration\">>,false}]},\
-                   {<<\"configuration\">>,true}]},\
-                 {<<\"textDocument\">>,\
-                  [{<<\"synchronization\">>,\
-                    [{<<\"dynamicRegistration\">>,false},\
-                     {<<\"willSave\">>,true},\
-                     {<<\"willSaveWaitUntil\">>,true},\
-                     {<<\"didSave\">>,true}]},\
-                   {<<\"completion\">>,\
-                    [{<<\"dynamicRegistration\">>,false},\
-                     {<<\"completionItem\">>,\
-                      [{<<\"snippetSupport\">>,true},\
-                       {<<\"deprecatedSupport\">>,true},\
-                       {<<\"tagSupport\">>,[{<<\"valueSet\">>,[1]}]}]},\
-                     {<<\"contextSupport\">>,true}]},\
-                   {<<\"hover\">>,\
-                    [{<<\"dynamicRegistration\">>,false},\
-                     {<<\"contentFormat\">>,[<<\"markdown\">>,<<\"plaintext\">>]}]},\
-                   {<<\"signatureHelp\">>,\
-                    [{<<\"dynamicRegistration\">>,false},\
-                     {<<\"signatureInformation\">>,\
-                      [{<<\"parameterInformation\">>,\
-                        [{<<\"labelOffsetSupport\">>,true}]},\
-                       {<<\"activeParameterSupport\">>,true}]}]},\
-                   {<<\"references\">>,[{<<\"dynamicRegistration\">>,false}]},\
-                   {<<\"definition\">>,\
-                    [{<<\"dynamicRegistration\">>,false},\
-                     {<<\"linkSupport\">>,true}]},\
-                   {<<\"declaration\">>,\
-                    [{<<\"dynamicRegistration\">>,false},\
-                     {<<\"linkSupport\">>,true}]},\
-                   {<<\"implementation\">>,\
-                    [{<<\"dynamicRegistration\">>,false},\
-                     {<<\"linkSupport\">>,true}]},\
-                   {<<\"typeDefinition\">>,\
-                    [{<<\"dynamicRegistration\">>,false},\
-                     {<<\"linkSupport\">>,true}]},\
-                   {<<\"documentSymbol\">>,\
-                    [{<<\"dynamicRegistration\">>,false},\
-                     {<<\"hierarchicalDocumentSymbolSupport\">>,true},\
-                     {<<\"symbolKind\">>,\
-                      [{<<\"valueSet\">>,\
-                        [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,\
-                         21,22,23,24,25,26]}]}]},\
-                   {<<\"documentHighlight\">>,\
-                    [{<<\"dynamicRegistration\">>,false}]},\
-                   {<<\"codeAction\">>,\
-                    [{<<\"dynamicRegistration\">>,false},\
-                     {<<\"codeActionLiteralSupport\">>,\
-                      [{<<\"codeActionKind\">>,\
-                        [{<<\"valueSet\">>,\
-                          [<<\"quickfix\">>,<<\"refactor\">>,\
-                           <<\"refactor.extract\">>,<<\"refactor.inline\">>,\
-                           <<\"refactor.rewrite\">>,<<\"source\">>,\
-                           <<\"source.organizeImports\">>]}]}]},\
-                     {<<\"isPreferredSupport\">>,true}]},\
-                   {<<\"formatting\">>,[{<<\"dynamicRegistration\">>,false}]},\
-                   {<<\"rangeFormatting\">>,[{<<\"dynamicRegistration\">>,false}]},\
-                   {<<\"rename\">>,[{<<\"dynamicRegistration\">>,false}]},\
-                   {<<\"publishDiagnostics\">>,\
-                    [{<<\"relatedInformation\">>,false},\
-                     {<<\"codeDescriptionSupport\">>,false},\
-                     {<<\"tagSupport\">>,[{<<\"valueSet\">>,[1,2]}]}]}]},\
-{<<\"experimental\">>,[{}]}]}]}]"
+textDocument/didOpen notify:
+{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",\"params\":{\"textDocument\":{\"uri\":\"file:///Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/src/response-sender.lfe\",\"version\":0,\"languageId\":null,\"text\":\"(defmodule response-sender\"}}}
+
+textDocument/didChange notify:
+{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didChange\",\"params\":{\"textDocument\":{\"uri\":\"file:///Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/test/lsp-proc-tests.lfe\",\"version\":1},\"contentChanges\":[{\"range\":{\"start\":{\"line\":141,\"character\":2},\"end\":{\"line\":141,\"character\":2}},\"rangeLength\":0,\"text\":\"\n\"}]}}
+
+shutdown request:
+{\"jsonrpc\":\"2.0\",\"id\":40,\"method\":\"shutdown\",\"params\":null}
 |#
