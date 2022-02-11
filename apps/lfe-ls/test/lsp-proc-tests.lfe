@@ -12,7 +12,7 @@
             (lsp-proc:process-input #"{\"Foo\"}" (make-lsp-state))))
 
 (deftest error-invalid-request--method-not-implemented
-  (is-equal `#(#(reply
+  (is-equal `#(#(noreply
                  #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
                ,(make-lsp-state))
             (lsp-proc:process-input #"{
@@ -23,7 +23,7 @@
 }" (make-lsp-state))))
 
 (deftest error-invalid-request--method-not-implemented--no-id
-  (is-equal `#(#(reply
+  (is-equal `#(#(noreply
                  #"{\"id\":null,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
                ,(make-lsp-state))
             (lsp-proc:process-input #"{
@@ -52,7 +52,7 @@
 
 (deftest process-simple-initialize-message
   (is-equal `#(#(reply
-                 #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")
+                 #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":{\"openClose\":true,\"change\":2}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")
                ,(make-lsp-state initialized 'true))
             (lsp-proc:process-input (make-simple-initialize-request)
                                     (make-lsp-state))))
@@ -61,6 +61,26 @@
   (is-equal `#(#(noreply #"null") ,(make-lsp-state))
             (lsp-proc:process-input (make-initialized-notify-request)
                                     (make-lsp-state))))
+
+(deftest process-textDocument/didOpen-message
+  (is-equal `#(#(noreply #"null")
+               #(lsp-state false #M(#"file:///foobar.lfe"
+                                    #(document #"file:///foobar.lfe" 1 #"the-document-text"))))
+            (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
+                                    (make-lsp-state))))
+
+(deftest process-textDocument/didOpen-message--second-doc
+  (is-equal `#(#(noreply #"null")
+               #(lsp-state false #M(#"file:///foobar.lfe"
+                                    #(document #"file:///foobar.lfe" 1 #"the-document-text")
+                                    #"file:///foobar2.lfe"
+                                    #(document #"file:///foobar2.lfe" 2 #"the-document-text2"))))
+            (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
+                                    (make-lsp-state documents
+                                                    #M(#"file:///foobar2.lfe"
+                                                       #(document #"file:///foobar2.lfe"
+                                                                  2
+                                                                  #"the-document-text2"))))))
 
 (defun make-simple-initialize-request ()
   #"{
@@ -79,6 +99,14 @@
 \"jsonrpc\":\"2.0\",
 \"method\":\"initialized\",
 \"params\":{}
+}")
+
+(defun make-simple-textDocument/didOpen-request ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/didOpen\",
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"languageId\":\"lfe\",\"version\":1,\"text\":\"the-document-text\"}}
 }")
 
 #|

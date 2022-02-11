@@ -9,6 +9,17 @@
 (defun %req-invalid-request-error () -32600)
 
 (defun process-input (input state)
+  "Main interface function.
+Takes string `input' (the request json-rpc payload) and produces
+output, the json-rpc response, as string.
+Conversion to and from json<->string is done in this function.
+The `state' argument is used an instance of `lsp-state' record that represents the current
+LSP server state.
+
+This function returns:
+`(tuple (tuple code response) state)`
+where `code' is `reply' or `noreply'. `response' is the json-rpc respose payload.
+`state' is the new, if changed, or old LSP server state."
   (case (try
             (let ((json-input (ljson:decode input)))
               (logger:debug "json-input: ~p" `(,json-input))
@@ -50,11 +61,11 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
 `new-state' is for state changes that need to be transported back to the state keeper."
   (case method
     (#"initialize"
-     (case (%on-initialize-req id params)
-       (`#(reply ,response)
-        `#(#(reply ,response) ,(set-lsp-state-initialized state 'true)))))
+     (%on-initialize-req id params state))
     (#"initialized"
      `#(,(%on-initialized-req id params) ,state))
+    (#"textDocument/didOpen"
+     (%on-textDocument/didOpen-req id params state))
     (#"test-success"
      `#(#(reply ,(%make-result-response id 'true)) ,state))
     (_
@@ -64,11 +75,30 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
                                                         (concat-binary method #"'!"))))
         ,state))))
 
-(defun %on-initialize-req (id params)
-  `#(reply ,(%make-result-response id (%make-initialize-result params))))
+;; method handlers
+
+(defun %on-initialize-req (id params state)
+  `#(#(reply ,(%make-result-response id (%make-initialize-result params)))
+     ,(set-lsp-state-initialized state 'true)))
 
 (defun %on-initialized-req (id params)
   `#(noreply null))
+
+(defun %on-textDocument/didOpen-req (id params state)
+  (let ((state-documents (lsp-state-documents state)))
+    (case params
+      (`(#(#"textDocument" (#(#"uri" ,uri)
+                            #(#"languageId" ,_)
+                            #(#"version" ,version)
+                            #(#"text" ,text))))
+       `#(#(noreply null)
+          ,(set-lsp-state-documents
+            state
+            (map-set state-documents
+                     uri
+                     (make-document uri uri version version text text)))))
+      (_
+       `#(#(noreply null) ,state)))))
 
 ;; response factories
 
@@ -85,4 +115,6 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
 
 (defun %make-capabilities ()
   #(#"capabilities" (#(#"completionProvider"
-                       (#(#"resolveProvider" true))))))
+                       (#(#"resolveProvider" true)))
+                     #(#"textDocumentSync"
+                       (#(#"openClose" true) #(#"change" 2))))))

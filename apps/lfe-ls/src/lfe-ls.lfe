@@ -90,7 +90,7 @@
 Can be 'call'ed or 'cast'.
 Returns: #(ok new-state)"
   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
-  (logger:debug "Received msg: ~p" `(,msg))
+  ;;(logger:debug "Received msg: ~p" `(,msg))
   (let* ((req (ls-state-req state))
          (sock (ls-state-socket state))
          (lsp-state (ls-state-lsp-state state))
@@ -99,7 +99,7 @@ Returns: #(ok new-state)"
                     (rest-msg (%handle-new-req rest-msg req)))))
     `#(ok ,(if (%request-complete-p new-req)
              (let ((complete-req (req-data new-req)))
-               (logger:info "Complete request: ~p" `(,complete-req))
+               ;;(logger:info "Complete request: ~p" `(,complete-req))
                (logger:info "Complete request of size: ~p" `(,(byte_size complete-req)))
                (case (lsp-proc:process-input complete-req lsp-state)
                  ;; probably we have more cases
