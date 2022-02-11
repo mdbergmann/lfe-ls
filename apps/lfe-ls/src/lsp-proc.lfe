@@ -58,10 +58,10 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
     (#"test-success"
      `#(#(reply ,(%make-result-response id 'true)) ,state))
     (_
-     `#(#(reply ,(%make-error-response id
-                                       (%req-invalid-request-error)
-                                       (concat-binary #"Method not supported: '"
-                                                      (concat-binary method #"'!"))))
+     `#(#(noreply ,(%make-error-response id
+                                         (%req-invalid-request-error)
+                                         (concat-binary #"Method not supported: '"
+                                                        (concat-binary method #"'!"))))
         ,state))))
 
 (defun %on-initialize-req (id params)
