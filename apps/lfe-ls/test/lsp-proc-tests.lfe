@@ -94,6 +94,16 @@
               (lsp-proc:process-input (make-simple-textDocument/didChange-request)
                                       new-state))))
 
+(deftest process-textDocument/didClose-message
+  ;; inject document
+  (let* ((state (make-lsp-state))
+         (new-state (tcdr (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
+                                                  state))))
+    (is-equal `#(#(noreply #"null")
+                 #(lsp-state false #M()))
+              (lsp-proc:process-input (make-simple-textDocument/didClose-request)
+                                      new-state))))
+
 (defun make-simple-initialize-request ()
   #"{
 \"jsonrpc\":\"2.0\",
@@ -129,6 +139,14 @@
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"version\":2},\"contentChanges\":[{\"text\":\"thedocument-text\"}]}
 }")
 
+(defun make-simple-textDocument/didClose-request ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/didClose\",
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"}}
+}")
+
 #|
 initialize request:
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootPath":"/Users/mbergmann/Development/MySources/lfe-ls/","rootUri":"file:///Users/mbergmann/Development/MySources/lfe-ls","initializationOptions":{},
@@ -141,6 +159,9 @@ textDocument/didOpen notify:
 
 textDocument/didChange notify:
 {\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didChange\",\"params\":{\"textDocument\":{\"uri\":\"file:///Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/test/lsp-proc-tests.lfe\",\"version\":1},\"contentChanges\":[{\"range\":{\"start\":{\"line\":141,\"character\":2},\"end\":{\"line\":141,\"character\":2}},\"rangeLength\":0,\"text\":\"\n\"}]}}
+
+textDocument/completion request:
+{\"jsonrpc\":\"2.0\",\"id\":12,\"method\":\"textDocument/completion\",\"params\\\":{\"textDocument\":{\"uri\":\"file:///Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/test/lfe-ls-tests.lfe\"},\"position\":{\"line\":86,\"character\":5},\"context\":{\"triggerKind\":1}}}
 
 shutdown request:
 {\"jsonrpc\":\"2.0\",\"id\":40,\"method\":\"shutdown\",\"params\":null}

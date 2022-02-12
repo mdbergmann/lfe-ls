@@ -22,7 +22,7 @@ where `code' is `reply' or `noreply'. `response' is the json-rpc respose payload
 `state' is the new, if changed, or old LSP server state."
   (case (try
             (let ((json-input (ljson:decode input)))
-              (logger:debug "json-input: ~p" `(,json-input))
+              ;;(logger:debug "json-input: ~p" `(,json-input))
               (case json-input
                 (`(#(#"jsonrpc" #"2.0")
                    #(#"id" ,req-id)
@@ -66,6 +66,8 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
      `#(,(%on-initialized-req id params) ,state))
     (#"textDocument/didOpen"
      (%on-textDocument/didOpen-req id params state))
+    (#"textDocument/didClose"
+     (%on-textDocument/didClose-req id params state))
     (#"textDocument/didChange"
      (%on-textDocument/didChange-req id params state))
     (#"test-success"
@@ -99,6 +101,19 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
               (map-set state-documents
                        uri
                        (make-document uri uri version version text text))))))
+      (_
+       (logger:warning "Missing 'textDocument' param!")
+       `#(#(noreply null) ,state)))))
+
+(defun %on-textDocument/didClose-req (id params state)
+  (let ((state-documents (lsp-state-documents state)))
+    (case params
+      (`(#(#"textDocument" ,text-document))
+       (let ((`#(#"uri" ,uri) (find-tkey #"uri" text-document)))
+         `#(#(noreply null)
+            ,(set-lsp-state-documents
+              state
+              (map-remove state-documents uri)))))
       (_
        (logger:warning "Missing 'textDocument' param!")
        `#(#(noreply null) ,state)))))
