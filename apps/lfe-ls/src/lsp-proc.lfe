@@ -107,9 +107,17 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
         (`#(#"contentChanges" ,content-changes) (find-tkey #"contentChanges" params)))
     (let ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
-          (`#(#"version" ,version) (find-tkey #"version" text-document)))      
+          (`#(#"version" ,version) (find-tkey #"version" text-document)))
       (let* ((state-documents (lsp-state-documents state))
-             (document (map-get state-documents uri)))
+             (document (map-get state-documents uri))
+             (doc-text (document-text document)))
+        (logger:notice "cc: ~p, len: ~p" `(,content-changes ,(length content-changes)))
+        (logger:notice "cc car: ~p" `(,(car content-changes)))
+        (logger:notice "doc-text: ~p" `(,(erlang:binary_to_list doc-text)))
+        (cl:reduce (lambda (change acc)
+                     (text-manip:modify-text doc-text change))
+                   content-changes
+                   'initial-value doc-text)
         `#(#(noreply null)
            ,(set-lsp-state-documents
              state

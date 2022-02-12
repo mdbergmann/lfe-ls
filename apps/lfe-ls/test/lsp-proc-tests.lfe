@@ -88,11 +88,14 @@
   (let* ((state (make-lsp-state))
          (new-state (tcdr (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
                                                   state))))
+    (meck:new 'text-manip)
+    (meck:expect 'text-manip 'modify-text (lambda (text change) #"thedocument-text"))
     (is-equal `#(#(noreply #"null")
                  #(lsp-state false #M(#"file:///foobar.lfe"
                                       #(document #"file:///foobar.lfe" 2 #"thedocument-text"))))
               (lsp-proc:process-input (make-simple-textDocument/didChange-request)
-                                      new-state))))
+                                      new-state))
+    (meck:unload 'text-manip)))
 
 (defun make-simple-initialize-request ()
   #"{
@@ -126,7 +129,7 @@
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"textDocument/didChange\",
-\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"version\":2},\"contentChanges\":[{\"range\":{\"start\":{\"line\":1,\"character\":1},\"end\":{\"line\":1,\"character\":4}},\"text\":\"hed\"}]}
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"version\":2},\"contentChanges\":[{\"range\":{\"start\":{\"line\":0,\"character\":1},\"end\":{\"line\":0,\"character\":4}},\"text\":\"hed\"}]}
 }")
 
 #|
