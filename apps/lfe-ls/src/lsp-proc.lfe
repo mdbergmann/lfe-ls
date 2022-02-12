@@ -110,22 +110,20 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
           (`#(#"version" ,version) (find-tkey #"version" text-document)))
       (let* ((state-documents (lsp-state-documents state))
              (document (map-get state-documents uri))
-             (doc-text (document-text document)))
-        (logger:notice "cc: ~p, len: ~p" `(,content-changes ,(length content-changes)))
-        (logger:notice "cc car: ~p" `(,(car content-changes)))
-        (logger:notice "doc-text: ~p" `(,(erlang:binary_to_list doc-text)))
-        (cl:reduce (lambda (change acc)
-                     (text-manip:modify-text doc-text change))
-                   content-changes
-                   'initial-value doc-text)
+             (current-text (document-text document))
+             (new-text (cl:reduce (lambda (change acc)
+                                    (let ((`#(#"text" ,updated-text) (find-tkey #"text" change)))
+                                      updated-text))
+                                  content-changes
+                                  'initial-value current-text)))
         `#(#(noreply null)
            ,(set-lsp-state-documents
              state
              (map-set state-documents
                       uri
                       (clj:-> document
-                              (set-document-text #"thedocument-text")
-                              (set-document-version 2)))))))))
+                              (set-document-text new-text)
+                              (set-document-version version)))))))))
 
 ;; response factories
 
@@ -141,7 +139,8 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
     #(#"serverInfo" (#(#"name" #"lfe-ls")))))
 
 (defun %make-capabilities ()
+  "Text sync is full dopcument."
   #(#"capabilities" (#(#"completionProvider"
                        (#(#"resolveProvider" true)))
                      #(#"textDocumentSync"
-                       (#(#"openClose" true) #(#"change" 2))))))
+                       (#(#"openClose" true) #(#"change" 1))))))
