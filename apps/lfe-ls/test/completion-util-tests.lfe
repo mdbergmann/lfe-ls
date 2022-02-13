@@ -2,10 +2,12 @@
   (behaviour ltest-unit))
 
 (include-lib "ltest/include/ltest-macros.lfe")
+(include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
-;; your test code here
-
-(deftest is
-  (is 'true)
-  (is (not 'false))
-  (is (not (not 'true))))
+(deftest find-completions--trigger-character
+  (is-equal `(,(make-completion-item label #"defun"
+                                     kind (completion-item-kind-function)))
+            (completion-util:find-completions-at
+             #"("
+             (make-position line 0 character 1)
+             (trigger-kind-character))))

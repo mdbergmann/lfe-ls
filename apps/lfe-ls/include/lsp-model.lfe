@@ -12,6 +12,11 @@
   (line 0 (integer))
   (character 0 (integer)))
 
+(defun trigger-kind-invoked () 0)
+(defun trigger-kind-character () 1)
+
+(defun completion-item-kind-function () 3)
+
 (defrecord completion-item
   (label)
   (kind))

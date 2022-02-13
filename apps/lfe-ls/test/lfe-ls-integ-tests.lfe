@@ -19,9 +19,9 @@
     (logger:notice "sending didOpen...")
     (gen_tcp:send socket (make-simple-textDocument/didOpen-request))
     (logger:notice "sending completion...")
-    ;;(gen_tcp:send socket (make-simple-textDocument/completion-request))
-    ;; (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
-    ;;   (is-equal "Content-Length: 47\r\n\r\n{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2}]}" response))
+    (gen_tcp:send socket (make-simple-textDocument/completion-request))
+    (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
+      (is-equal "Content-Length: 47\r\n\r\n{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2}]}" response))
     (gen_tcp:close socket)))
 
 (defun make-simple-initialize-request ()
