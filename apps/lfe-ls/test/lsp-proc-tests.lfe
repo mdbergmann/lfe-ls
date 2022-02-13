@@ -83,26 +83,24 @@
                                                                   2
                                                                   #"the-document-text2"))))))
 
-(deftest process-textDocument/didChange-message
-  ;; inject document
+(defun injected-document-state ()
   (let* ((state (make-lsp-state))
          (new-state (tcdr (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
                                                   state))))
-    (is-equal `#(#(noreply #"null")
-                 #(lsp-state false #M(#"file:///foobar.lfe"
-                                      #(document #"file:///foobar.lfe" 2 #"thedocument-text"))))
-              (lsp-proc:process-input (make-simple-textDocument/didChange-request)
-                                      new-state))))
+    new-state))
+
+(deftest process-textDocument/didChange-message
+  (is-equal `#(#(noreply #"null")
+               #(lsp-state false #M(#"file:///foobar.lfe"
+                                    #(document #"file:///foobar.lfe" 2 #"thedocument-text"))))
+            (lsp-proc:process-input (make-simple-textDocument/didChange-request)
+                                    (injected-document-state))))
 
 (deftest process-textDocument/didClose-message
-  ;; inject document
-  (let* ((state (make-lsp-state))
-         (new-state (tcdr (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
-                                                  state))))
-    (is-equal `#(#(noreply #"null")
-                 #(lsp-state false #M()))
-              (lsp-proc:process-input (make-simple-textDocument/didClose-request)
-                                      new-state))))
+  (is-equal `#(#(noreply #"null")
+               #(lsp-state false #M()))
+            (lsp-proc:process-input (make-simple-textDocument/didClose-request)
+                                    (injected-document-state))))
 
 (defun make-simple-initialize-request ()
   #"{
@@ -146,6 +144,14 @@
 \"method\":\"textDocument/didClose\",
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"}}
 }")
+
+(defun make-simple-textDocument/completion-request--invoked-trigger ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":12,
+\"method\":\"textDocument/completion\",
+\"params\\\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":86,\"character\":5},\"context\":{\"triggerKind\":1}}}"
+)
 
 #|
 initialize request:
