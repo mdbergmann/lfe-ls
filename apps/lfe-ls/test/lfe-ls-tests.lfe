@@ -128,7 +128,7 @@ OK - don't send error on unknown methods.
 OK - implement 'textDocument/didOpen' (notification)
 OK - implement 'textDocument/didChange' (notification)
 OK - implement 'textDocument/didClose' (notification)
-- implement 'textDocument/completion' with dummy response first
+=> - implement 'textDocument/completion' with dummy response first
 - implement 'shutdown'
 - allow flexible order of json-rpc attributes (lsp-proc:process-input)
 |#

@@ -156,6 +156,7 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
 (defun %make-capabilities ()
   "Text sync is full dopcument."
   #(#"capabilities" (#(#"completionProvider"
-                       (#(#"resolveProvider" true)))
+                       (#(#"resolveProvider" true)
+                        #(#"triggerCharacters" (#"(" #":" #"'"))))
                      #(#"textDocumentSync"
                        (#(#"openClose" true) #(#"change" 1))))))
