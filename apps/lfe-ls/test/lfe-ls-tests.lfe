@@ -131,4 +131,5 @@ OK - implement 'textDocument/didClose' (notification)
 => - implement 'textDocument/completion' with dummy response first
 - implement 'shutdown'
 - allow flexible order of json-rpc attributes (lsp-proc:process-input)
+- review error handling and error responses
 |#

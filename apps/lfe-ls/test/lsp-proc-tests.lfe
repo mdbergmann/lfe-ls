@@ -168,6 +168,7 @@
 \"method\":\"textDocument/completion\",
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":1}}
 }")
+
 (defun make-compl-example-textDocument/didOpen-request ()
   #"{
 \"jsonrpc\":\"2.0\",
