@@ -102,6 +102,22 @@
             (lsp-proc:process-input (make-simple-textDocument/didClose-request)
                                     (injected-document-state))))
 
+(deftest process-textDocument/completion-message--invoked-trigger
+  (let* ((state (make-lsp-state))
+         (new-state (tcdr (lsp-proc:process-input (make-compl-example-textDocument/didOpen-request)
+                                                  state))))
+    (meck:new 'completion-util)
+    (meck:expect 'completion-util 'find-completions-at (lambda (text position trigger)
+                                                         `(,(make-completion-item
+                                                             label #"defun"
+                                                             kind 2))))
+    (is-equal `#(#(reply
+                   #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2}]}")
+                 ,new-state)
+              (lsp-proc:process-input (make-simple-textDocument/completion-request--invoked-trigger)
+                                      new-state))
+    (meck:unload 'completion-util)))
+
 (defun make-simple-initialize-request ()
   #"{
 \"jsonrpc\":\"2.0\",
@@ -148,10 +164,18 @@
 (defun make-simple-textDocument/completion-request--invoked-trigger ()
   #"{
 \"jsonrpc\":\"2.0\",
-\"id\":12,
+\"id\":99,
 \"method\":\"textDocument/completion\",
-\"params\\\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":86,\"character\":5},\"context\":{\"triggerKind\":1}}}"
-)
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":1}}
+}")
+(defun make-compl-example-textDocument/didOpen-request ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/didOpen\",
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"languageId\":\"lfe\",\"text\":\"(de\"}}
+}")
+
 
 #|
 initialize request:

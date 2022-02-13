@@ -70,6 +70,8 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
      (%on-textDocument/didClose-req id params state))
     (#"textDocument/didChange"
      (%on-textDocument/didChange-req id params state))
+    (#"textDocument/completion"
+     (%on-textDocument/completion-req id params state))
     (#"test-success"
      `#(#(reply ,(%make-result-response id 'true)) ,state))
     (_
@@ -140,6 +142,28 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
                               (set-document-text new-text)
                               (set-document-version version)))))))))
 
+(defun %on-textDocument/completion-req (id params state)
+  (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
+        (`#(#"position" ,position) (find-tkey #"position" params))
+        (`#(#"context" ,context) (find-tkey #"context" params)))
+    (let ((`(#(#"uri" ,uri)) text-document)
+          (`(#(#"line" ,line) #(#"character" ,character)) position)
+          (`(#(#"triggerKind" ,trigger-kind)) context))
+      (logger:notice "uri: ~p, line: ~p, char: ~p, triggerKind: ~p"
+                     `(,uri ,line ,character ,trigger-kind))
+      (let* ((state-documents (lsp-state-documents state))
+             (document (map-get state-documents uri))
+             (text (document-text document)))
+        `#(#(reply ,(%make-result-response
+                     id
+                     (%make-completion-result
+                      (completion-util:find-completions-at
+                       text
+                       (make-position line line
+                                      character character)
+                       trigger-kind))))
+           ,state)))))
+
 ;; response factories
 
 (defun %make-result-response (id result)
@@ -160,3 +184,9 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
                         #(#"triggerCharacters" (#"(" #":" #"'"))))
                      #(#"textDocumentSync"
                        (#(#"openClose" true) #(#"change" 1))))))
+
+(defun %make-completion-result (completions)
+  (lists:map (lambda (citem)
+               `(#(#"label" ,(completion-item-label citem))
+                 #(#"kind" ,(completion-item-kind citem))))
+             completions))

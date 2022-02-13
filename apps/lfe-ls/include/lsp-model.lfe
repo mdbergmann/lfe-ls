@@ -8,9 +8,13 @@
   (version 0 (integer))
   (text #"" (binary)))
 
-;; (defrecord position
-;;   (line 0 (integer))
-;;   (character 0 (integer)))
+(defrecord position
+  (line 0 (integer))
+  (character 0 (integer)))
+
+(defrecord completion-item
+  (label)
+  (kind))
 
 ;; (defrecord range
 ;;   (start (make-position))
