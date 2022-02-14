@@ -19,7 +19,7 @@
 (defun %find-symbols-and-modules-or-module-functions (text position)
   (let ((module-or-symbol (%parse-module-or-symbol-name-backwards text position)))
     (case module-or-symbol
-      (`(,a ,_) (%find-module-functions a))
+      (`(,a ,_) (%find-module-functions `(,a)))
       (`(,a) (%find-symbols-and-modules)))))
 
 (defun %parse-module-or-symbol-name-backwards (text position)

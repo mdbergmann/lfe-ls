@@ -56,3 +56,57 @@
     (is-equal `#(completion-item #"zlib" 9 #"")
               (car (lists:reverse funs)))))
 
+(deftest find-completions--invoked--symbol-or-module--no-delim
+  (let ((funs (completion-util:find-completions-at
+               #"de"
+               (make-position line 0 character 2)
+               'null)))
+    ;;(logger:notice "funs: ~p" `(,funs))
+    (is-equal `#(completion-item #"'macro-function'/1" 3 #"lfe:")
+              (car funs))
+    (is-equal `#(completion-item #"zlib" 9 #"")
+              (car (lists:reverse funs)))))
+
+(deftest find-completions--invoked--symbol-or-module--paren-delim
+  (let ((funs (completion-util:find-completions-at
+               #"(de"
+               (make-position line 0 character 3)
+               'null)))
+    ;;(logger:notice "funs: ~p" `(,funs))
+    (is-equal `#(completion-item #"'macro-function'/1" 3 #"lfe:")
+              (car funs))
+    (is-equal `#(completion-item #"zlib" 9 #"")
+              (car (lists:reverse funs)))))
+
+(deftest find-completions--invoked--symbol-or-module--paren-delim--module
+  (let ((funs (completion-util:find-completions-at
+               #"(io:fo"
+               (make-position line 0 character 5)
+               'null)))
+    ;;(logger:notice "funs: ~p" `(,funs))
+    (is-equal `#(completion-item #"columns/0" 3 #"io:")
+              (car funs))
+    (is-equal `#(completion-item #"write/2" 3 #"io:")
+              (car (lists:reverse funs)))))
+
+(deftest find-completions--invoked--symbol-or-module--space-delim--module
+  (let ((funs (completion-util:find-completions-at
+               #" io:fo"
+               (make-position line 0 character 5)
+               'null)))
+    ;;(logger:notice "funs: ~p" `(,funs))
+    (is-equal `#(completion-item #"columns/0" 3 #"io:")
+              (car funs))
+    (is-equal `#(completion-item #"write/2" 3 #"io:")
+              (car (lists:reverse funs)))))
+
+(deftest find-completions--invoked--symbol-or-module--no-delim--module
+  (let ((funs (completion-util:find-completions-at
+               #"io:fo"
+               (make-position line 0 character 5)
+               'null)))
+    ;;(logger:notice "funs: ~p" `(,funs))
+    (is-equal `#(completion-item #"columns/0" 3 #"io:")
+              (car funs))
+    (is-equal `#(completion-item #"write/2" 3 #"io:")
+              (car (lists:reverse funs)))))
