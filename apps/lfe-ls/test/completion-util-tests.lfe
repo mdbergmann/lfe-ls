@@ -45,5 +45,15 @@
     (is-equal `#(completion-item #"write/2" 3 #"io:")
               (car (lists:reverse funs)))))
 
+(deftest find-completions--invoked--symbol-or-module--space-delim
+  (let ((funs (completion-util:find-completions-at
+               #" de"
+               (make-position line 0 character 3)
+               'null)))
+    ;;(logger:notice "funs: ~p" `(,funs))
+    (is-equal `#(completion-item #"'macro-function'/1" 3 #"lfe:")
+              (car funs))
+    (is-equal `#(completion-item #"whereis/1" 3 #"erlang:")
+              (car (lists:reverse funs)))))
 
-;; - make test for no parse separater token backwards
+;; - list modules

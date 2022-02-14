@@ -1,21 +1,28 @@
 (defmodule completion-util
   (export (find-completions-at 3)))
 
+(include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 (defun find-completions-at (text position trigger-char)
   (lists:sort
    (case trigger-char
-     (#"(" (%find-global-and-local-symbols))
+     (#"(" (%find-symbols-and-modules))
      (#":" (%find-module-functions
-            (%parse-module-name-backwards text
-                                          (set-position-character position
-                                           (1- (position-character position)))))))))
+            (%parse-module-or-symbol-name-backwards
+             text
+             (set-position-character position
+                                     (1- (position-character position))))))
+     (_ (%find-symbols-and-modules-or-module-functions
+         text position)))))
 
-(defun 1- (n)
-  (- n 1))
+(defun %find-symbols-and-modules-or-module-functions (text position)
+  (let ((module-or-symbol (%parse-module-or-symbol-name-backwards text position)))
+    (case module-or-symbol
+      (`(,a ,_) (%find-module-functions a))
+      (`(,a) (%find-symbols-and-modules)))))
 
-(defun %parse-module-name-backwards (text position)
+(defun %parse-module-or-symbol-name-backwards (text position)
   (let* ((line (position-line position))
          (char-pos (position-character position))
          (lines (binary:split text #"\n"))
@@ -26,17 +33,17 @@
                     (`#((,_ ,a) (,_)) a)
                     (`#((,_ ,a) (,_ ,b)) (if (< (string:length a)
                                                 (string:length b)) a b)))))
-    (case (string:split tmp-mod #":")
-      (`(,a) a)
-      (`(,a ,_) a))))
+    (string:split tmp-mod #":")))
 
 (defun %find-module-functions (module)
-  (let* ((module-info (call (erlang:binary_to_atom module) 'module_info))
+  (let* ((module-name (case module
+                        (`(,a ,_) a)
+                        (`(,a) a)))
+         (module-info (call (erlang:binary_to_atom module-name) 'module_info))
          (module-funs (cl:elt 1 (cadr module-info))))
-    (%fun-tuples-to-completions module-funs (binary (module binary) (#":" binary)))
-  ))
+    (%fun-tuples-to-completions module-funs (binary (module-name binary) (#":" binary)))))
 
-(defun %find-global-and-local-symbols ()
+(defun %find-symbols-and-modules ()
   (lists:append (%predefined-lfe-functions)
                 (%predefined-erlang-functions)))
 

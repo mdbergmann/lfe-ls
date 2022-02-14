@@ -12,3 +12,5 @@
 
 (defun binary-to-string (bin)
   (lists:flatten (io_lib:format "~p" `(,bin))))
+
+(defun 1- (n) (- n 1))
