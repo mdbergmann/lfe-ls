@@ -148,7 +148,7 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
         (`#(#"context" ,context) (find-tkey #"context" params)))
     (let ((`(#(#"uri" ,uri)) text-document)
           (`(#(#"line" ,line) #(#"character" ,character)) position)
-          (`(#(#"triggerKind" ,trigger-kind)) context))
+          (trigger-char (find-tkey #"triggerCharacter" context)))
       (let* ((state-documents (lsp-state-documents state))
              (document (map-get state-documents uri))
              (text (document-text document)))
@@ -159,7 +159,9 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
                        text
                        (make-position line line
                                       character character)
-                       trigger-kind))))
+                       (case trigger-char
+                         ('() 'null)
+                         (else (tcdr else)))))))
            ,state)))))
 
 ;; response factories

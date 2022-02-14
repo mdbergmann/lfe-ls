@@ -107,14 +107,35 @@
          (new-state (tcdr (lsp-proc:process-input (make-compl-example-textDocument/didOpen-request)
                                                   state))))
     (meck:new 'completion-util)
-    (meck:expect 'completion-util 'find-completions-at (lambda (text position trigger)
-                                                         `(,(make-completion-item
-                                                             label #"defun"
-                                                             kind 2))))
+    (meck:expect 'completion-util 'find-completions-at (lambda (text position trigger-char)
+                                                         (logger:notice "trigger-char: ~p" `(,trigger-char))
+                                                         (case trigger-char
+                                                           ('null `(,(make-completion-item
+                                                                      label #"defun"
+                                                                      kind 2)))
+                                                           (_ (error "Not expected trigger-char!")))))
     (is-equal `#(#(reply
                    #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2}]}")
                  ,new-state)
               (lsp-proc:process-input (make-simple-textDocument/completion-request--invoked-trigger)
+                                      new-state))
+    (meck:unload 'completion-util)))
+
+(deftest process-textDocument/completion-message--trigger-char
+  (let* ((state (make-lsp-state))
+         (new-state (tcdr (lsp-proc:process-input (make-compl-example-textDocument/didOpen-request)
+                                                  state))))
+    (meck:new 'completion-util)
+    (meck:expect 'completion-util 'find-completions-at (lambda (text position trigger-char)
+                                                         (case trigger-char
+                                                           ('null (error "Not expected trigger-char!"))
+                                                           (#":" `(,(make-completion-item
+                                                                     label #"defun"
+                                                                     kind 2))))))
+    (is-equal `#(#(reply
+                   #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2}]}")
+                 ,new-state)
+              (lsp-proc:process-input (make-simple-textDocument/completion-request--trigger-char)
                                       new-state))
     (meck:unload 'completion-util)))
 
@@ -167,6 +188,14 @@
 \"id\":99,
 \"method\":\"textDocument/completion\",
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":1}}
+}")
+
+(defun make-simple-textDocument/completion-request--trigger-char ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/completion\",
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":2,\"triggerCharacter\":\":\"}}
 }")
 
 (defun make-compl-example-textDocument/didOpen-request ()

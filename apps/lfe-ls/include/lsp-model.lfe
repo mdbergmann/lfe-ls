@@ -16,6 +16,10 @@
 (defun trigger-kind-character () 1)
 
 (defun completion-item-kind-function () 3)
+(defun completion-item-kind-variable () 6)
+(defun completion-item-kind-module () 9)
+(defun completion-item-kind-keyword () 14)
+(defun completion-item-kind-struct () 22)
 
 (defrecord completion-item
   (label)
