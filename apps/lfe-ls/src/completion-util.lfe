@@ -27,12 +27,14 @@
          (char-pos (position-character position))
          (lines (binary:split text #"\n"))
          (line (cl:elt line lines))
-         (tmp-mod (case `#(,(string:split line #" " 'trailing) ,(string:split line #"(" 'trailing))
+         (tmp-mod (case `#(,(string:split line #" " 'trailing)
+                           ,(string:split line #"(" 'trailing))
                     (`#((,_) (,_)) line)
                     (`#((,_) (,_ ,b)) b)
                     (`#((,_ ,a) (,_)) a)
-                    (`#((,_ ,a) (,_ ,b)) (if (< (string:length a)
-                                                (string:length b)) a b)))))
+                    (`#((,_ ,a) (,_ ,b))
+                     (if (< (string:length a)
+                            (string:length b)) a b)))))
     (string:split tmp-mod #":")))
 
 (defun %find-module-functions (module)
@@ -44,8 +46,9 @@
     (%fun-tuples-to-completions module-funs (binary (module-name binary) (#":" binary)))))
 
 (defun %find-symbols-and-modules ()
-  (lists:append (%predefined-lfe-functions)
-                (%predefined-erlang-functions)))
+  (lists:append `(,(%predefined-lfe-functions)
+                  ,(%predefined-erlang-functions)
+                  ,(%loaded-modules))))
 
 (defun %predefined-erlang-functions ()
   (%prep-internal-functions (erlang:module_info)
@@ -59,6 +62,14 @@
                             (lambda (name arity)
                               (lfe_internal:is_lfe_bif name arity))
                             #"lfe:"))
+
+(defun %loaded-modules ()
+  (lists:map (lambda (m)
+               (let ((module-name (cl:elt 0 m)))
+                 (make-completion-item
+                  label (erlang:atom_to_binary module-name)
+                  kind (completion-item-kind-module))))
+             (code:all_loaded)))
 
 (defun %prep-internal-functions (module-info bif-fun-pred detail)
   (let* ((mod-functions (cl:elt 1 (cadr module-info)))
