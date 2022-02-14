@@ -189,5 +189,6 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
   "`completions' is a list of `completion-item' records."
   (lists:map (lambda (citem)
                `(#(#"label" ,(completion-item-label citem))
-                 #(#"kind" ,(completion-item-kind citem))))
+                 #(#"kind" ,(completion-item-kind citem))
+                 #(#"detail" ,(completion-item-detail citem))))
              completions))

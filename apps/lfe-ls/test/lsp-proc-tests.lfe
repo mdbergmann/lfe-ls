@@ -3,8 +3,8 @@
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
-(include-lib "apps/lfe-ls/include/lsp-model.lfe")
 (include-lib "apps/lfe-ls/include/utils.lfe")
+(include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 (deftest error-on-decoding
   (is-equal `#(#(reply
@@ -108,14 +108,13 @@
                                                   state))))
     (meck:new 'completion-util)
     (meck:expect 'completion-util 'find-completions-at (lambda (text position trigger-char)
-                                                         (logger:notice "trigger-char: ~p" `(,trigger-char))
                                                          (case trigger-char
                                                            ('null `(,(make-completion-item
                                                                       label #"defun"
                                                                       kind 2)))
                                                            (_ (error "Not expected trigger-char!")))))
     (is-equal `#(#(reply
-                   #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2}]}")
+                   #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2,\"detail\":\"\"}]}")
                  ,new-state)
               (lsp-proc:process-input (make-simple-textDocument/completion-request--invoked-trigger)
                                       new-state))
@@ -131,9 +130,10 @@
                                                            ('null (error "Not expected trigger-char!"))
                                                            (#":" `(,(make-completion-item
                                                                      label #"defun"
-                                                                     kind 2))))))
+                                                                     kind 2
+                                                                     detail #"foo"))))))
     (is-equal `#(#(reply
-                   #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2}]}")
+                   #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2,\"detail\":\"foo\"}]}")
                  ,new-state)
               (lsp-proc:process-input (make-simple-textDocument/completion-request--trigger-char)
                                       new-state))

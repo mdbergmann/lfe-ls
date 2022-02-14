@@ -11,7 +11,7 @@
       (is-equal "Content-Length: 197\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))
     (gen_tcp:close socket)))
 
-(deftest process-completion-message
+(deftestskip process-completion-message
   (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 5555 '(#(active false)))))
     (logger:notice "initializing...")
     (gen_tcp:send socket (make-simple-initialize-request))
