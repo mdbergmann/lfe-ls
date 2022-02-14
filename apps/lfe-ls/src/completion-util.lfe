@@ -1,5 +1,5 @@
 (defmodule completion-util
-  (export all))
+  (export (find-completions-at 3)))
 
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
@@ -7,7 +7,28 @@
   (lists:sort
    (case trigger-char
      (#"(" (%find-global-and-local-symbols))
-     (#":" (%find-module-functions #"io"))))) ; (%parse-module text position)))))
+     (#":" (%find-module-functions
+            (%parse-module-name-backwards text
+                                          (set-position-character position
+                                           (1- (position-character position)))))))))
+
+(defun 1- (n)
+  (- n 1))
+
+(defun %parse-module-name-backwards (text position)
+  (let* ((line (position-line position))
+         (char-pos (position-character position))
+         (lines (binary:split text #"\n"))
+         (line (cl:elt line lines))
+         (tmp-mod (case `#(,(string:split line #" " 'trailing) ,(string:split line #"(" 'trailing))
+                    (`#((,_) (,_)) line)
+                    (`#((,_) (,_ ,b)) b)
+                    (`#((,_ ,a) (,_)) a)
+                    (`#((,_ ,a) (,_ ,b)) (if (< (string:length a)
+                                                (string:length b)) a b)))))
+    (case (string:split tmp-mod #":")
+      (`(,a) a)
+      (`(,a ,_) a))))
 
 (defun %find-module-functions (module)
   (let* ((module-info (call (erlang:binary_to_atom module) 'module_info))

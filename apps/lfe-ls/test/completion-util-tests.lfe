@@ -9,21 +9,41 @@
                #"("
                (make-position line 0 character 1)
                #"(")))
-    ;;(logger:notice "funs: ~p" `(,funs))
     (is-equal `#(completion-item #"'macro-function'/1" 3 #"lfe:")
               (car funs))
     (is-equal `#(completion-item #"whereis/1" 3 #"erlang:")
-              (car (lists:reverse funs)))
-    ))
+              (car (lists:reverse funs)))))
 
-(deftest find-completions--trigger-character--colon--module-functions
+(deftest find-completions--trigger-character--colon--module-functions--paren-delim
   (let ((funs (completion-util:find-completions-at
                #"(io:"
+               (make-position line 0 character 4)
+               #":")))
+    (is-equal `#(completion-item #"columns/0" 3 #"io:")
+              (car funs))
+    (is-equal `#(completion-item #"write/2" 3 #"io:")
+              (car (lists:reverse funs)))))
+
+(deftest find-completions--trigger-character--colon--module-functions--space-delim
+  (let ((funs (completion-util:find-completions-at
+               #" io:"
+               (make-position line 0 character 4)
+               #":")))
+    (is-equal `#(completion-item #"columns/0" 3 #"io:")
+              (car funs))
+    (is-equal `#(completion-item #"write/2" 3 #"io:")
+              (car (lists:reverse funs)))))
+
+(deftest find-completions--trigger-character--colon--no-delim
+  (let ((funs (completion-util:find-completions-at
+               #"io:"
                (make-position line 0 character 4)
                #":")))
     ;;(logger:notice "funs: ~p" `(,funs))
     (is-equal `#(completion-item #"columns/0" 3 #"io:")
               (car funs))
     (is-equal `#(completion-item #"write/2" 3 #"io:")
-              (car (lists:reverse funs)))
-    ))
+              (car (lists:reverse funs)))))
+
+
+;; - make test for no parse separater token backwards
