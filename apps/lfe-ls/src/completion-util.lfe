@@ -4,13 +4,20 @@
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 (defun find-completions-at (text position trigger-char)
-  (case trigger-char
-    (#"(" (%find-global-and-local-symbols))))
+  (lists:sort
+   (case trigger-char
+     (#"(" (%find-global-and-local-symbols))
+     (#":" (%find-module-functions #"io"))))) ; (%parse-module text position)))))
+
+(defun %find-module-functions (module)
+  (let* ((module-info (call (erlang:binary_to_atom module) 'module_info))
+         (module-funs (cl:elt 1 (cadr module-info))))
+    (%fun-tuples-to-completions module-funs (binary (module binary) (#":" binary)))
+  ))
 
 (defun %find-global-and-local-symbols ()
-  (lists:sort
-   (lists:append (%predefined-lfe-functions)
-                 (%predefined-erlang-functions))))
+  (lists:append (%predefined-lfe-functions)
+                (%predefined-erlang-functions)))
 
 (defun %predefined-erlang-functions ()
   (%prep-internal-functions (erlang:module_info)
@@ -31,11 +38,14 @@
                                             (let ((`#(,name ,arity) ft))
                                               (funcall bif-fun-pred name arity)))
                                           mod-functions)))
-    (lists:map (lambda (ft)
-                 (let ((`#(,name ,arity) ft))
-                   (make-completion-item
-                    label (erlang:list_to_binary
-                           (io_lib:format "~p/~p" `(,name ,arity)))
-                    kind (completion-item-kind-function)
-                    detail detail)))
-               visible-functions)))
+    (%fun-tuples-to-completions visible-functions detail)))
+
+(defun %fun-tuples-to-completions (ftuples detail)
+  (lists:map (lambda (ft)
+               (let ((`#(,name ,arity) ft))
+                 (make-completion-item
+                  label (erlang:list_to_binary
+                         (io_lib:format "~p/~p" `(,name ,arity)))
+                  kind (completion-item-kind-function)
+                  detail detail)))
+             ftuples))
