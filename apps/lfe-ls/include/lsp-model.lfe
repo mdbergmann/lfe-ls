@@ -15,6 +15,7 @@
 (defun trigger-kind-invoked () 0)
 (defun trigger-kind-character () 1)
 
+(defun completion-item-kind-macro () 2)  ; reused for macro
 (defun completion-item-kind-function () 3)
 (defun completion-item-kind-variable () 6)
 (defun completion-item-kind-module () 9)

@@ -50,11 +50,16 @@
                          (`(,a) a)))
           (module-info (call (erlang:binary_to_atom module-name) 'module_info))
           (module-funs (cl:elt 1 (cadr module-info))))
-     (%fun-tuples-to-completions module-funs (binary (module-name binary) (#":" binary))))))
+     (%fun-tuples-to-completions module-funs
+                                 (completion-item-kind-function)
+                                 (binary (module-name binary) (#":" binary))))))
 
 (defun %find-symbols-and-modules ()
   (lists:append `(,(%predefined-lfe-functions)
                   ,(%predefined-erlang-functions)
+                  ,(%predefined-lfe-core-forms)
+                  ,(%predefined-macro-forms)
+                  ,(%predefined-common-lisp-inspired-macros)
                   ,(%loaded-modules))))
 
 (defun %predefined-erlang-functions ()
@@ -70,6 +75,35 @@
                               (lfe_internal:is_lfe_bif name arity))
                             #"lfe:"))
 
+(defun %predefined-lfe-core-forms ()
+  (%fun-tuples-to-completions
+   (lists:map (lambda (elem)
+                `#(,elem null))
+              '(quote cons car cdr list tuple binary map map-get map-set map-update lambda
+                      match-lambda let let-function letrec-function let-macro progn if case receive
+                      catch try case catch when after funcall call define-module extend-module
+                      define-function define-macro type-test guard-bif
+                      include-lib))
+   (completion-item-kind-keyword)
+   #"lfe-core"))
+
+(defun %predefined-macro-forms ()
+  (%fun-tuples-to-completions
+   (lists:map (lambda (elem)
+                `#(,elem null))
+              '(list* let* flet flet* fletrec cond andalso orelse fun fun lc list-comp
+                      bc binary-comp match-spec))
+   (completion-item-kind-macro)
+   #"lfe-core"))
+
+(defun %predefined-common-lisp-inspired-macros ()
+  (%fun-tuples-to-completions
+   (lists:map (lambda (elem)
+                `#(,elem null))
+              '(defun defmacro defsyntax macrolet syntaxlet prog1 prog2 defmodule defrecord))
+   (completion-item-kind-keyword)
+   #"lfe-core"))
+
 (defun %loaded-modules ()
   (lists:map (lambda (m)
                (let ((module-name (cl:elt 0 m)))
@@ -84,17 +118,21 @@
                                             (let ((`#(,name ,arity) ft))
                                               (funcall bif-fun-pred name arity)))
                                           mod-functions)))
-    (%fun-tuples-to-completions visible-functions detail)))
+    (%fun-tuples-to-completions visible-functions
+                                (completion-item-kind-function)
+                                detail)))
 
-(defun %fun-tuples-to-completions (ftuples detail)
+(defun %fun-tuples-to-completions (ftuples kind detail)
   (lists:map (lambda (ft)
                (let* ((`#(,name ,arity) ft)
                       (fun-name (erlang:atom_to_list name))
                       (fun-name-bin (erlang:atom_to_binary name)))
                  (make-completion-item
-                  label (erlang:list_to_binary
-                         (io_lib:format "~s/~p" `(,fun-name ,arity)))
-                  kind (completion-item-kind-function)
+                  label (case arity
+                          ('null fun-name-bin)
+                          (ar (erlang:list_to_binary
+                               (io_lib:format "~s/~p" `(,fun-name ,ar)))))
+                  kind kind
                   detail detail
                   insert-text fun-name-bin)))
              ftuples))
