@@ -68,7 +68,7 @@
   (== (req-expected-len req) (req-current-len req)))
 
 (defun %handle-new-req (msg req)
-  ;;(logger:debug "handle-new-req...")
+  (logger:debug "handle-new-req...")
   (case (binary:split msg (double-nl))
     (`(,len ,rest)
      (let* ((len-and-nl (binary (len binary)
@@ -80,7 +80,7 @@
                  data proper-rest)))))
 
 (defun %handle-partial-req (msg req)
-  ;;(logger:debug "handle-partial-req...")
+  (logger:debug "handle-partial-req...")
   (clj:-> req
           (set-req-current-len (+ (req-current-len req) (byte_size msg)))
           (set-req-data (concat-binary (req-data req) msg))))
@@ -89,8 +89,7 @@
   "Handles data recived via tcp.
 Can be 'call'ed or 'cast'.
 Returns: #(ok new-state)"
-  ;;(logger:debug "Received msg len: ~p" `(,(byte_size msg)))
-  ;;(logger:debug "Received msg: ~p" `(,msg))
+  (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
   (let* ((req (ls-state-req state))
          (sock (ls-state-socket state))
          (lsp-state (ls-state-lsp-state state))
@@ -99,19 +98,19 @@ Returns: #(ok new-state)"
                     (rest-msg (%handle-new-req rest-msg req)))))
     `#(ok ,(if (%request-complete-p new-req)
              (let ((complete-req (req-data new-req)))
-               ;;(logger:info "Complete request: ~p" `(,complete-req))
-               ;;(logger:info "Complete request of size: ~p" `(,(byte_size complete-req)))
+               (logger:debug "Complete request: ~p" `(,complete-req))
+               (logger:notice "Complete request of size: ~p" `(,(byte_size complete-req)))
                (case (lsp-proc:process-input complete-req lsp-state)
                  ;; probably we have more cases
                  (`#(#(reply ,lsp-proc-output) ,new-lsp-state)
-                  ;;(logger:debug "lsp output: ~p" `(,lsp-proc-output))
+                  (logger:debug "lsp output: ~p" `(,lsp-proc-output))
                   (response-sender:send-response sock lsp-proc-output)
-                  ;;(logger:debug "Response sent!")
+                  (logger:debug "Response sent!")
                   (clj:-> state
                           (set-ls-state-req (make-req))
                           (set-ls-state-lsp-state new-lsp-state)))
                  (`#(#(noreply ,_) ,new-lsp-state)
-                  ;;(logger:debug "lsp output with noreply")
+                  (logger:debug "lsp output with noreply")
                   (clj:-> state
                           (set-ls-state-req (make-req))
                           (set-ls-state-lsp-state new-lsp-state)))))

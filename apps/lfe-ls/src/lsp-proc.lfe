@@ -19,7 +19,7 @@ where `code' is `reply' or `noreply'. `response' is the json-rpc respose payload
 `state' is the new, if changed, or old LSP server state."
   (case (try
             (let ((json-input (ljson:decode input)))
-              ;;(logger:debug "json-input: ~p" `(,json-input))
+              (logger:debug "json-input: ~p" `(,json-input))
               (case json-input
                 (`(#(#"jsonrpc" #"2.0")
                    #(#"id" ,req-id)

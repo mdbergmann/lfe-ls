@@ -34,17 +34,17 @@
                     (`#((,_ ,a) (,_ ,b))
                      (if (< (string:length a)
                             (string:length b)) a b)))))
-    ;; (logger:notice "text: ~p" `(,text))
-    ;; (logger:notice "lines: ~p" `(,(length lines)))
-    ;; (logger:notice "line: ~p" `(,line))
-    ;; (logger:notice "line-pos: ~p" `(,line-pos))
-    ;; (logger:notice "line-substr: ~p, tmp-mod: ~p, char-pos: ~p" `(,line-substr ,tmp-mod ,char-pos))
+    ;; (logger:debug "text: ~p" `(,text))
+    ;; (logger:debug "lines: ~p" `(,(length lines)))
+    ;; (logger:debug "line: ~p" `(,line))
+    ;; (logger:debug "line-pos: ~p" `(,line-pos))
+    ;; (logger:debug "line-substr: ~p, tmp-mod: ~p, char-pos: ~p" `(,line-substr ,tmp-mod ,char-pos))
     (string:split tmp-mod #":")))
 
 (defun %find-module-functions
   (('()) '())
   ((module)
-   ;;(logger:notice "module: ~p" `(,module))
+   (logger:debug "module: ~p" `(,module))
    (let* ((module-name (case module
                          (`(,a ,_) a)
                          (`(,a) a)))
