@@ -24,7 +24,8 @@
 (defrecord completion-item
   (label)
   (kind)
-  (detail #"" (binary)))
+  (detail #"" (binary))
+  (insert-text #"" (binary)))
 
 ;; (defrecord range
 ;;   (start (make-position))

@@ -111,10 +111,11 @@
                                                          (case trigger-char
                                                            ('null `(,(make-completion-item
                                                                       label #"defun"
-                                                                      kind 2)))
+                                                                      kind 2
+                                                                      insert-text #"defun")))
                                                            (_ (error "Not expected trigger-char!")))))
     (is-equal `#(#(reply
-                   #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2,\"detail\":\"\"}]}")
+                   #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2,\"detail\":\"\",\"insertText\":\"defun\"}]}")
                  ,new-state)
               (lsp-proc:process-input (make-simple-textDocument/completion-request--invoked-trigger)
                                       new-state))

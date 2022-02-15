@@ -179,7 +179,7 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
     #(#"serverInfo" (#(#"name" #"lfe-ls")))))
 
 (defun %make-capabilities ()
-  "Text sync is full dopcument."
+  "Text sync is full document."
   #(#"capabilities" (#(#"completionProvider"
                        (#(#"resolveProvider" true)
                         #(#"triggerCharacters" (#"(" #":" #"'"))))
@@ -189,7 +189,12 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
 (defun %make-completion-result (completions)
   "`completions' is a list of `completion-item' records."
   (lists:map (lambda (citem)
-               `(#(#"label" ,(completion-item-label citem))
-                 #(#"kind" ,(completion-item-kind citem))
-                 #(#"detail" ,(completion-item-detail citem))))
+               (let ((insert-text (completion-item-insert-text citem)))
+                 (lists:append
+                  `(#(#"label" ,(completion-item-label citem))
+                    #(#"kind" ,(completion-item-kind citem))
+                    #(#"detail" ,(completion-item-detail citem)))
+                  (if (> (byte_size insert-text) 0)
+                    `(#(#"insertText" ,insert-text))
+                    '()))))
              completions))

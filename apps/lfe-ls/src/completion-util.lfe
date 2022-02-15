@@ -34,17 +34,17 @@
                     (`#((,_ ,a) (,_ ,b))
                      (if (< (string:length a)
                             (string:length b)) a b)))))
-    ;;(logger:notice "text: ~p" `(,text))
-    (logger:notice "lines: ~p" `(,(length lines)))
-    (logger:notice "line: ~p" `(,line))
-    (logger:notice "line-pos: ~p" `(,line-pos))
-    (logger:notice "line-substr: ~p, tmp-mod: ~p, char-pos: ~p" `(,line-substr ,tmp-mod ,char-pos))
+    ;; (logger:notice "text: ~p" `(,text))
+    ;; (logger:notice "lines: ~p" `(,(length lines)))
+    ;; (logger:notice "line: ~p" `(,line))
+    ;; (logger:notice "line-pos: ~p" `(,line-pos))
+    ;; (logger:notice "line-substr: ~p, tmp-mod: ~p, char-pos: ~p" `(,line-substr ,tmp-mod ,char-pos))
     (string:split tmp-mod #":")))
 
 (defun %find-module-functions
   (('()) '())
   ((module)
-   (logger:notice "module: ~p" `(,module))
+   ;;(logger:notice "module: ~p" `(,module))
    (let* ((module-name (case module
                          (`(,a ,_) a)
                          (`(,a) a)))
@@ -88,10 +88,13 @@
 
 (defun %fun-tuples-to-completions (ftuples detail)
   (lists:map (lambda (ft)
-               (let ((`#(,name ,arity) ft))
+               (let* ((`#(,name ,arity) ft)
+                      (fun-name (erlang:atom_to_list name))
+                      (fun-name-bin (erlang:atom_to_binary name)))
                  (make-completion-item
                   label (erlang:list_to_binary
-                         (io_lib:format "~p/~p" `(,name ,arity)))
+                         (io_lib:format "~s/~p" `(,fun-name ,arity)))
                   kind (completion-item-kind-function)
-                  detail detail)))
+                  detail detail
+                  insert-text fun-name-bin)))
              ftuples))
