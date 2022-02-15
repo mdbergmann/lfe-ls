@@ -5,9 +5,6 @@
 (include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
-(defun %req-parse-error () -32700)
-(defun %req-invalid-request-error () -32600)
-
 (defun process-input (input state)
   "Main interface function.
 Takes string `input' (the request json-rpc payload) and produces
@@ -36,7 +33,7 @@ where `code' is `reply' or `noreply'. `response' is the json-rpc respose payload
                 (_
                  (logger:warning "Invalid lsp header!")
                  `#(#(reply ,(%make-error-response 'null
-                                                   (%req-invalid-request-error)
+                                                   (req-invalid-request-error)
                                                    #"Invalid LSP header!"))
                     ,state))))
           (catch
@@ -45,7 +42,7 @@ where `code' is `reply' or `noreply'. `response' is the json-rpc respose payload
                (logger:warning "Error on json operation: ~p, type: ~p, value: ~p"
                                `(,stacktrace ,type ,value))
                `#(#(reply ,(%make-error-response 'null
-                                                 (%req-parse-error)
+                                                 (req-parse-error)
                                                  #"Error on parsing json!"))
                   ,state)))))
     (`#(#(,code ,response) ,state)
@@ -77,7 +74,7 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
      `#(#(reply ,(%make-result-response id 'true)) ,state))
     (_
      `#(#(noreply ,(%make-error-response id
-                                         (%req-invalid-request-error)
+                                         (req-invalid-request-error)
                                          (concat-binary #"Method not supported: '"
                                                         (concat-binary method #"'!"))))
         ,state))))

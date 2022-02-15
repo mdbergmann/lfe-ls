@@ -3,6 +3,9 @@
   (initialized 'false (boolean))
   (documents #M()))
 
+(defun req-parse-error () -32700)
+(defun req-invalid-request-error () -32600)
+
 (defrecord document
   (uri #"" (binary))
   (version 0 (integer))
