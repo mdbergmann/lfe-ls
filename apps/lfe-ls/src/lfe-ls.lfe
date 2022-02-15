@@ -31,7 +31,7 @@
 ;;; -------------------------
 
 (defun start_link (listen-socket)
-  (logger:debug "start_link (server)")
+  (logger:info "start_link (lfe-ls)")
   (gen_server:start_link `#(local ,(SERVER))
                          (MODULE)
                          `#(socket ,listen-socket)
@@ -46,7 +46,7 @@
 
 (defun init
   ((`#(socket ,listen-socket))
-   (logger:debug "init (server)")
+   (logger:info "init (lfe-ls)")
    (gen_server:cast (self) 'accept)
    `#(ok ,(make-ls-state socket listen-socket)))
   ((`#(other))
@@ -58,7 +58,7 @@
   (let ((`#(ok ,accept-socket)
          (gen_tcp:accept (ls-state-socket state))))
     (inet:setopts accept-socket '(#(active once)))
-    (logger:debug "connection accepted (server)")
+    (logger:notice "connection accepted (lfe-ls)")
     (lfe-ls-sup:start-socket)
     `#(noreply ,(set-ls-state-socket state accept-socket))))
 

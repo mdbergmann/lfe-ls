@@ -5,14 +5,13 @@
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 (defun find-completions-at (text position trigger-char)
-  (lists:sort
-   (case trigger-char
-     (#"(" (%find-symbols-and-modules))
-     (#":" (%find-module-functions
-            (%parse-module-or-symbol-name-backwards
-             text position)))
-     (_ (%find-symbols-and-modules-or-module-functions
-         text position)))))
+  (case trigger-char
+    (#"(" (%find-symbols-and-modules))
+    (#":" (%find-module-functions
+           (%parse-module-or-symbol-name-backwards
+            text position)))
+    (_ (%find-symbols-and-modules-or-module-functions
+        text position))))
 
 (defun %find-symbols-and-modules-or-module-functions (text position)
   (let ((module-or-symbol (%parse-module-or-symbol-name-backwards text position)))
