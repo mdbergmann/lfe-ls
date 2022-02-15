@@ -5,14 +5,14 @@
 (include-lib "apps/lfe-ls/include/utils.lfe")
 
 (deftest process-initialize-message
-  (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 5555 '(#(active false)))))
+  (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
     (gen_tcp:send socket (make-simple-initialize-request))
     (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
       (is-equal "Content-Length: 197\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))
     (gen_tcp:close socket)))
 
 (deftest process-completion-message
-  (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 5555 '(#(active false)))))
+  (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
     (logger:notice "initializing...")
     (gen_tcp:send socket (make-simple-initialize-request))
     (gen_tcp:recv socket 0)

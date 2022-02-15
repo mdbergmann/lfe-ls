@@ -41,7 +41,7 @@
 
 (defun init (_args)
   (logger:debug "init (sup)")
-  (let (((tuple 'ok listen-socket) (gen_tcp:listen 5555 '(#(active false) binary))))
+  (let (((tuple 'ok listen-socket) (gen_tcp:listen 10567 '(#(active false) binary))))
     (logger:debug "listen (sup) ok")
     ;;(spawn_link #'empty-listeners/0)
     `#(ok #(,(sup-flags)
