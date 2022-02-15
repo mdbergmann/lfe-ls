@@ -148,7 +148,7 @@ Returns: #(ok new-state)"
    (logger:debug "tcp-closed")
    `#(stop normal ,state))
   ((e state)
-   (logger:warn "unexpected: ~p" `(,e))
+   (logger:warning "unexpected: ~p" `(,e))
    `#(noreply ,state)))
 
 (defun terminate (_reason _state)

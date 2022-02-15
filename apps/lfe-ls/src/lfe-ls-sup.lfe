@@ -33,7 +33,7 @@
                          (supervisor-opts)))
 
 (defun stop ()
-  (erlang:stop "requested to stop!"))
+  (erlang:exit (pid) 'stopped))
 
 ;;; -----------------------
 ;;; callback implementation
