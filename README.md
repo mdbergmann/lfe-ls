@@ -1,13 +1,6 @@
 # lfe-ls
 
-[![Build Status][gh-actions-badge]][gh-actions]
-[![LFE Versions][lfe badge]][lfe]
-[![Erlang Versions][erlang badge]][version]
-[![Tags][github tags badge]][github tags]
-
-[![Project Logo][logo]][logo-large]
-
-*An LFE application*
+*LFE Language Server implementation*
 
 ##### Table of Contents
 
@@ -20,13 +13,38 @@
 
 ## About [&#x219F;](#table-of-contents)
 
-TBD
+LFE language server written in LFE.
+
+This is largely work in progress. The following LSP functionality is implemented:
+
+- `initialize` request/response
+- `initialized` notification
+- `textDocument/didOpen` notification which loads and maintains documents in memory.
+- `textDocument/didChange` notification which updates the document in memory. Currently the sync transfers the full document. There is room form optimization here to implement a incremental sync.
+- `textDocument/didClose` notification which deletes the document in memory.
+- `textDocument/completion` request/response implements global symbols and loaded modules as well as module functions.
+
+Planned further support is:
+
+- hover support for showing documentation (via eldoc in Eglot).
+- sending compiler diagnostics back to the LSP client.
+
 
 ## Build [&#x219F;](#table-of-contents)
+
+Compile with:
 
 ```shell
 $ rebar3 lfe compile
 ```
+
+To create a release do:
+
+```shell
+$ rebar3 as prod release -o <release-path>
+```
+
+An executable can be started as `release/lfe-ls/bin/lfe-ls` when `release-path` was just 'release' within the project.
 
 # Start the Project REPL [&#x219F;](#table-of-contents)
 
@@ -34,34 +52,21 @@ $ rebar3 lfe compile
 $ rebar3 lfe repl
 ```
 
+Starting the repl in this way wilkl automatically start the lfe-ls application and ls server.
+
 # Tests [&#x219F;](#table-of-contents)
 
 ```shell
-$ rebar3 as test lfe test
+$ rebar3 as test eunit
 ```
 
 ## Usage [&#x219F;](#table-of-contents)
 
-TBD
+To use the lfe-ls server with Emacs Eglot you have to provide the host and port parameters. Those are 'localhost', port 10567.
+
 
 ## License [&#x219F;](#table-of-contents)
 
 Apache License, Version 2.0
 
 Copyright © 2022, Manfred Bergmann <mb@software-by-mabe.com>.
-
-<!-- Named page links below: /-->
-
-[logo]: https://avatars1.githubusercontent.com/u/3434967?s=250
-[logo-large]: https://avatars1.githubusercontent.com/u/3434967
-[github]: https://github.com/ORG/lfe-ls
-[gitlab]: https://gitlab.com/ORG/lfe-ls
--[gh-actions-badge]: https://github.com/ORG/lfe-ls/workflows/Go/badge.svg
-[gh-actions]: https://github.com/ORG/lfe-ls/actions
-[lfe]: https://github.com/lfe/lfe
-[lfe badge]: https://img.shields.io/badge/lfe-2.0-blue.svg
-[erlang badge]: https://img.shields.io/badge/erlang-19%20to%2024-blue.svg
-[version]: https://github.com/ORG/lfe-ls/blob/master/.github/workflows/cicd.yml
-[github tags]: https://github.com/ORG/lfe-ls/tags
-[github tags badge]: https://img.shields.io/github/tag/ORG/lfe-ls.svg
-[github downloads]: https://img.shields.io/github/downloads/ORG/lfe-ls/total.svg
