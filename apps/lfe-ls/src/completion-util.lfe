@@ -10,9 +10,7 @@
      (#"(" (%find-symbols-and-modules))
      (#":" (%find-module-functions
             (%parse-module-or-symbol-name-backwards
-             text
-             (set-position-character position
-                                     (1- (position-character position))))))
+             text position)))
      (_ (%find-symbols-and-modules-or-module-functions
          text position)))))
 
@@ -23,27 +21,36 @@
       (`(,a) (%find-symbols-and-modules)))))
 
 (defun %parse-module-or-symbol-name-backwards (text position)
-  (let* ((line (position-line position))
+  (let* ((line-pos (position-line position))
          (char-pos (position-character position))
-         (lines (binary:split text #"\n"))
-         (line (cl:elt line lines))
-         (tmp-mod (case `#(,(string:split line #" " 'trailing)
-                           ,(string:split line #"(" 'trailing))
-                    (`#((,_) (,_)) line)
+         (lines (string:split text #"\n" 'all))
+         (line (cl:elt line-pos lines))
+         (line-substr (string:slice line 0 char-pos))
+         (tmp-mod (case `#(,(string:split line-substr #" " 'trailing)
+                           ,(string:split line-substr #"(" 'trailing))
+                    (`#((,_) (,_)) line-substr)
                     (`#((,_) (,_ ,b)) b)
                     (`#((,_ ,a) (,_)) a)
                     (`#((,_ ,a) (,_ ,b))
                      (if (< (string:length a)
                             (string:length b)) a b)))))
+    ;;(logger:notice "text: ~p" `(,text))
+    (logger:notice "lines: ~p" `(,(length lines)))
+    (logger:notice "line: ~p" `(,line))
+    (logger:notice "line-pos: ~p" `(,line-pos))
+    (logger:notice "line-substr: ~p, tmp-mod: ~p, char-pos: ~p" `(,line-substr ,tmp-mod ,char-pos))
     (string:split tmp-mod #":")))
 
-(defun %find-module-functions (module)
-  (let* ((module-name (case module
-                        (`(,a ,_) a)
-                        (`(,a) a)))
-         (module-info (call (erlang:binary_to_atom module-name) 'module_info))
-         (module-funs (cl:elt 1 (cadr module-info))))
-    (%fun-tuples-to-completions module-funs (binary (module-name binary) (#":" binary)))))
+(defun %find-module-functions
+  (('()) '())
+  ((module)
+   (logger:notice "module: ~p" `(,module))
+   (let* ((module-name (case module
+                         (`(,a ,_) a)
+                         (`(,a) a)))
+          (module-info (call (erlang:binary_to_atom module-name) 'module_info))
+          (module-funs (cl:elt 1 (cadr module-info))))
+     (%fun-tuples-to-completions module-funs (binary (module-name binary) (#":" binary))))))
 
 (defun %find-symbols-and-modules ()
   (lists:append `(,(%predefined-lfe-functions)

@@ -100,7 +100,7 @@ Returns: #(ok new-state)"
     `#(ok ,(if (%request-complete-p new-req)
              (let ((complete-req (req-data new-req)))
                ;;(logger:info "Complete request: ~p" `(,complete-req))
-               (logger:info "Complete request of size: ~p" `(,(byte_size complete-req)))
+               ;;(logger:info "Complete request of size: ~p" `(,(byte_size complete-req)))
                (case (lsp-proc:process-input complete-req lsp-state)
                  ;; probably we have more cases
                  (`#(#(reply ,lsp-proc-output) ,new-lsp-state)
