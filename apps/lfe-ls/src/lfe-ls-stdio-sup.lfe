@@ -6,10 +6,7 @@
    (stop 0))
   ;; callback implementation
   (export
-   (init 1))
-  ;; public implementation
-  (export
-   (start-socket 0)))
+   (init 1)))
 
 ;;; ----------------
 ;;; config functions
@@ -41,17 +38,15 @@
 
 (defun init (_args)
   (logger:debug "init (sup)")
-  (let (((tuple 'ok listen-socket) (gen_tcp:listen 10567 '(#(active false) binary))))
-    (logger:debug "listen (sup) ok")
-    ;;(spawn_link #'empty-listeners/0)
-    `#(ok #(,(sup-flags)
-            (,(child 'lfe-ls 'start_link `(,listen-socket)))))))
+  (io:setopts 'standard_io '(binary #(encoding latin1)))
+  `#(ok #(,(sup-flags)
+          (,(child 'lfe-ls-stdio 'start_link '(standard_io))))))
 
 ;;; -----------------
 ;;; public functions
 ;;; ----------------
-(defun start-socket ()
-  (logger:debug "start-socket (sup)")
+(defun start-child ()
+  (logger:debug "start-child (sup)")
   (supervisor:start_child (SERVER) '()))
 
 ;;; -----------------

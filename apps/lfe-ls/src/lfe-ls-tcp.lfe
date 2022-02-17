@@ -1,4 +1,4 @@
-(defmodule lfe-ls
+(defmodule lfe-ls-tcp
   (behaviour gen_server)
   ;; gen_server implementation
   (export
