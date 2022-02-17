@@ -7,6 +7,6 @@
   (data #""))
 
 (defrecord ls-state
-  (socket 'nil)
+  (device 'nil)
   (req (make-req))
   (lsp-state (make-lsp-state)))

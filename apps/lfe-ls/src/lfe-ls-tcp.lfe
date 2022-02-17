@@ -49,7 +49,7 @@
   ((`#(socket ,listen-socket))
    (logger:info "init (lfe-ls)")
    (gen_server:cast (self) 'accept)
-   `#(ok ,(make-ls-state socket listen-socket)))
+   `#(ok ,(make-ls-state device listen-socket)))
   ((`#(other))
    ;; used from test
    `#(ok ,(make-ls-state))))
@@ -57,11 +57,11 @@
 (defun %accept-handler (state)
   (logger:debug "waiting for connection...")
   (let ((`#(ok ,accept-socket)
-         (gen_tcp:accept (ls-state-socket state))))
+         (gen_tcp:accept (ls-state-device state))))
     (inet:setopts accept-socket '(#(active once)))
     (logger:notice "connection accepted (lfe-ls)")
     (lfe-ls-sup:start-socket)
-    `#(noreply ,(set-ls-state-socket state accept-socket))))
+    `#(noreply ,(set-ls-state-device state accept-socket))))
 
 (defun double-nl () #"\r\n\r\n")
 
@@ -92,7 +92,7 @@ Can be 'call'ed or 'cast'.
 Returns: #(ok new-state)"
   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
   (let* ((req (ls-state-req state))
-         (sock (ls-state-socket state))
+         (sock (ls-state-device state))
          (lsp-state (ls-state-lsp-state state))
          (new-req (case (string:prefix msg "Content-Length: ")
                     ('nomatch (%handle-partial-req msg req))

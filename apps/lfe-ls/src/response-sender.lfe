@@ -3,7 +3,7 @@
 
 (defun send-response (device json-response)
   (logger:debug "Sending response...")
-  (lfe-ls:send device (%build-full-response json-response)))
+  (lfe-ls-stdio:send device (%build-full-response json-response)))
 
 (defun %build-full-response (json-response)
   (let* ((resp-size (byte_size json-response))

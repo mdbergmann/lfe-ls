@@ -12,10 +12,10 @@
   ((`#(device ,io-device))
    (logger:info "init (lfe-ls-stdio)")
    ;;(io:setopts io-device '(binary #(encoding latin1)))
-   (loop '() (make-ls-state socket io-device))))
+   (loop '() (make-ls-state device io-device))))
 
 (defun loop (lines state)
-  (let ((io-device (ls-state-socket state)))
+  (let ((io-device (ls-state-device state)))
     (case (io:get_line io-device "")
       (#"\n"
        (logger:notice "lines: ~p" `(,lines))
@@ -38,7 +38,7 @@
   (logger:debug "Complete request: ~p" `(,complete-req))
   (logger:notice "Complete request of size: ~p" `(,(byte_size complete-req)))
   (let ((lsp-state (ls-state-lsp-state state))
-        (io-device (ls-state-socket state)))
+        (io-device (ls-state-device state)))
     (case (lsp-proc:process-input complete-req lsp-state)
       ;; probably we have more cases
       (`#(#(reply ,lsp-proc-output) ,new-lsp-state)
@@ -61,7 +61,5 @@
   (let ((`(,name ,value) (binary:split line #":")))
     `#(,(string:trim (string:lowercase name)) ,(string:trim value))))
 
-(defun double-nl () #"\r\n\r\n")
-
-(defun send (socket msg)
-  (gen_tcp:send socket msg))
+(defun send (device msg)
+  (io:format device "~s" `(,msg)))
