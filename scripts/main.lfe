@@ -7,4 +7,4 @@
 (defun main (args)
   (let ((script-name (escript:script_name)))
     (io:format "Running script '~s' with args ~p ...~n" `(,script-name ,args))
-    (io:format "~p~n" `(,(lfe-ls:my-fun)))))
+    (io:format "~p~n" `(,(lfe-ls-app:start 'foo 'bar)))))

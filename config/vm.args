@@ -1,6 +1,6 @@
--sname 'my-lfe-app'
+-sname 'lfe-ls'
 
--setcookie 'my-lfe-app_cookie'
+-setcookie 'lfe-ls-app_cookie'
 
 +K true
 +A30

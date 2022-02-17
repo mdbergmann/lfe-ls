@@ -14,6 +14,7 @@
    (code_change 3))
   ;; server API
   (export
+   (send 2)
    (pid 0)))
 
 (include-lib "apps/lfe-ls/include/utils.lfe")
@@ -157,6 +158,9 @@ Returns: #(ok new-state)"
   `#(ok ,state))
 
 ;;; our server API
+
+(defun send (socket msg)
+  (gen_tcp:send socket msg))
 
 (defun pid ()
   (erlang:whereis (SERVER)))

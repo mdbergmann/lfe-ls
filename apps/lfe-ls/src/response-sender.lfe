@@ -1,10 +1,9 @@
 (defmodule response-sender
   (export (send-response 2)))
 
-(defun send-response (socket json-response)
+(defun send-response (device json-response)
   (logger:debug "Sending response...")
-  (gen_tcp:send socket
-                (%build-full-response json-response)))
+  (lfe-ls:send device (%build-full-response json-response)))
 
 (defun %build-full-response (json-response)
   (let* ((resp-size (byte_size json-response))

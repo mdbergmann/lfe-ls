@@ -29,10 +29,10 @@
 
 (deftest test-receive-package--full-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
                                            `#(#(reply #"{\"Pong\"}")
                                               ,(make-lsp-state initialized 'true))))
-   (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
+   (meck:expect 'response-sender 'send-response (lambda (_sender-pid json-response) 'ok))
 
    (let* ((response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
      (is-equal `#(ok #(ls-state nil #(req 8 8 #"{\"Ping\"}") #(lsp-state true))) response)
@@ -43,10 +43,10 @@
 
 (deftest test-receive-package--full-req--noreply
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
                                            `#(#(noreply #"{\"Pong\"}")
                                               ,(make-lsp-state initialized 'true))))
-   (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
+   (meck:expect 'response-sender 'send-response (lambda (_sender-pid json-response) 'ok))
 
    (let* ((response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
      (is-equal `#(ok #(ls-state nil #(req 8 8 #"{\"Ping\"}") #(lsp-state true))) response)
@@ -58,9 +58,9 @@
 
 (deftest test-receive-package--incomplete-req--replaced-by-new-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
                                            `#(#(reply #"{\"Pong\"}") ,lsp-state)))
-   (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
+   (meck:expect 'response-sender 'send-response (lambda (_sender-pid json-response) 'ok))
 
    (let* ((_ (gen_server:call pid `#(received #"Content-Length: 13\r\n\r\n{\"Hello\"}")))
           (response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
@@ -72,9 +72,9 @@
 
 (deftest test-receive-package--partial-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
                                            `#(#(reply #"{\"WorldHello\"}") ,lsp-state)))
-   (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
+   (meck:expect 'response-sender 'send-response (lambda (_sender-pid json-response) 'ok))
 
    (let* ((response1 (gen_server:call pid `#(received #"Content-Length: 14\r\n\r\n{\"Hello")))
           (response2 (gen_server:call pid `#(received #"World\"}"))))
@@ -87,9 +87,9 @@
 
 (deftest test-receive-package--real-partial-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state)
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
                                            `#(#(reply #"dummy") ,lsp-state)))
-   (meck:expect 'response-sender 'send-response (lambda (_socket json-response) 'ok))
+   (meck:expect 'response-sender 'send-response (lambda (_sender-pid json-response) 'ok))
 
    (let* ((`#(ok ,state1) (gen_server:call pid `#(received ,(start-json-msg))))
           (`#(ok ,state2) (gen_server:call pid `#(received ,(json-msg-part2)))))
@@ -132,8 +132,9 @@ OK - implement 'textDocument/completion' with dummy response first
 OK - completion, find more edge cases
 OK - completion, add insertTest without arity.
 OK - completion, add lfe core forms
+=> - refactor to not use gen_tcp in response-sender directly
 - completion, prefilter functions, or module functions
-=> - implement 'shutdown'
+- implement 'shutdown'
 - allow flexible order of json-rpc attributes (lsp-proc:process-input)
 - review error handling and error responses
 |#
