@@ -11,15 +11,17 @@
       (file:write dev (full-msg))
       (file:close dev)
       (let ((`#(ok ,dev) (file:open "/tmp/lfe-ls" '(read append binary #(encoding latin1)))))
-        (let ((stdio (lfe-ls-stdio:spawn_link dev)))
+        (let ((`#(ok ,stdio) (lfe-ls-stdio:start_link dev)))
           (try
               (progn
                 ,@body)
             (catch
-              (_ 'null)))
-          (erlang:exit stdio 'normal)))
-      (file:delete "/tmp/lfe-ls")
-      )))
+              ((tuple type value stacktrace)
+               (logger:error "Exception type: ~p, value: ~p, stacktrace: ~p"
+                             `(,type ,value ,stacktrace)))))
+          (erlang:exit stdio 'normal)
+          ))
+      (file:delete "/tmp/lfe-ls"))))
 
 (deftest send-initialize-receive-response
   (with-fixture
@@ -31,12 +33,6 @@
      (_
       (is 'false)))
    ))
-
-;; (deftest read-from-stdin
-;;   (let ((stdio (lfe-ls-stdio:spawn_link)))
-;;     (io:write 'standard_io #"Hello\nWorld\n")
-;;     (timer:sleep 1000)
-;;     (erlang:exit stdio 'normal)))
 
 (defun start-json-msg ()
   (binary ((preamble-json-msg) binary) ((json-msg-part1) binary)))

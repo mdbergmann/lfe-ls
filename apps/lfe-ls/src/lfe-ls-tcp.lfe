@@ -32,7 +32,7 @@
 ;;; -------------------------
 
 (defun start_link (listen-socket)
-  (logger:info "start_link (lfe-ls)")
+  (logger:info "start_link (lfe-ls-tcp)")
   (gen_server:start_link `#(local ,(SERVER))
                          (MODULE)
                          `#(socket ,listen-socket)
@@ -47,7 +47,7 @@
 
 (defun init
   ((`#(socket ,listen-socket))
-   (logger:info "init (lfe-ls)")
+   (logger:info "init (lfe-ls-tcp)")
    (gen_server:cast (self) 'accept)
    `#(ok ,(make-ls-state device listen-socket)))
   ((`#(other))
@@ -60,7 +60,7 @@
          (gen_tcp:accept (ls-state-device state))))
     (inet:setopts accept-socket '(#(active once)))
     (logger:notice "connection accepted (lfe-ls)")
-    (lfe-ls-sup:start-socket)
+    (lfe-ls-tcp-sup:start-socket)
     `#(noreply ,(set-ls-state-device state accept-socket))))
 
 (defun double-nl () #"\r\n\r\n")

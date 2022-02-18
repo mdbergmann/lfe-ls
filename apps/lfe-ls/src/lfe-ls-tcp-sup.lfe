@@ -27,7 +27,7 @@
 ;;; -------------------------
 
 (defun start_link ()
-  (logger:debug "start_link (sup)")
+  (logger:debug "start_link (tcp-sup)")
   (supervisor:start_link `#(local ,(SERVER))
                          (MODULE)
                          (supervisor-opts)))
@@ -40,18 +40,18 @@
 ;;; -----------------------
 
 (defun init (_args)
-  (logger:debug "init (sup)")
+  (logger:debug "init (tcp-sup)")
   (let (((tuple 'ok listen-socket) (gen_tcp:listen 10567 '(#(active false) binary))))
     (logger:debug "listen (sup) ok")
     ;;(spawn_link #'empty-listeners/0)
     `#(ok #(,(sup-flags)
-            (,(child 'lfe-ls 'start_link `(,listen-socket)))))))
+            (,(child 'lfe-ls-tcp 'start_link `(,listen-socket)))))))
 
 ;;; -----------------
 ;;; public functions
 ;;; ----------------
 (defun start-socket ()
-  (logger:debug "start-socket (sup)")
+  (logger:debug "start-socket (tcp-sup)")
   (supervisor:start_child (SERVER) '()))
 
 ;;; -----------------
