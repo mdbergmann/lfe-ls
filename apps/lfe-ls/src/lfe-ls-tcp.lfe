@@ -105,7 +105,7 @@ Returns: #(ok new-state)"
                  ;; probably we have more cases
                  (`#(#(reply ,lsp-proc-output) ,new-lsp-state)
                   (logger:debug "lsp output: ~p" `(,lsp-proc-output))
-                  (response-sender:send-response sock lsp-proc-output)
+                  (response-sender:send-response (MODULE) sock lsp-proc-output)
                   (logger:debug "Response sent!")
                   (clj:-> state
                           (set-ls-state-req (make-req))

@@ -10,18 +10,27 @@
      (`#(ok ,dev)
       (file:write dev (full-msg))
       (file:close dev)
-      (let ((`#(ok ,dev) (file:open "/tmp/lfe-ls" '(read binary #(encoding latin1)))))
+      (let ((`#(ok ,dev) (file:open "/tmp/lfe-ls" '(read append binary #(encoding latin1)))))
         (let ((stdio (lfe-ls-stdio:spawn_link dev)))
           (try
               (progn
                 ,@body)
             (catch
               (_ 'null)))
-          (erlang:exit stdio 'normal))))))
+          (erlang:exit stdio 'normal)))
+      (file:delete "/tmp/lfe-ls")
+      )))
 
-(deftest create
+(deftest send-initialize-receive-response
   (with-fixture
-   (is (erlang:is_pid stdio))))
+   (is (erlang:is_pid stdio))
+   (timer:sleep 500)
+   (case (file:read_file "/tmp/lfe-ls")
+     (`#(ok ,bin-data)
+      (is-equal `#(2074 31) (binary:match bin-data #"{\"id\":1,\"result\":{\"capabilities")))
+     (_
+      (is 'false)))
+   ))
 
 ;; (deftest read-from-stdin
 ;;   (let ((stdio (lfe-ls-stdio:spawn_link)))
@@ -48,3 +57,4 @@
 
 (defun json-msg-part2 ()
   #"6,17,18,19,20,21,22,23,24,25,26]}},\"documentHighlight\":{\"dynamicRegistration\":false},\"codeAction\":{\"dynamicRegistration\":false,\"codeActionLiteralSupport\":{\"codeActionKind\":{\"valueSet\":[\"quickfix\",\"refactor\",\"refactor.extract\",\"refactor.inline\",\"refactor.rewrite\",\"source\",\"source.organizeImports\"]}},\"isPreferredSupport\":true},\"formatting\":{\"dynamicRegistration\":false},\"rangeFormatting\":{\"dynamicRegistration\":false},\"rename\":{\"dynamicRegistration\":false},\"publishDiagnostics\":{\"relatedInformation\":false,\"codeDescriptionSupport\":false,\"tagSupport\":{\"valueSet\":[1,2]}}},\"experimental\":{}}}}")
+

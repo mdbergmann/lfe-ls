@@ -11,8 +11,10 @@
 (defun init
   ((`#(device ,io-device))
    (logger:info "init (lfe-ls-stdio)")
-   ;;(io:setopts io-device '(binary #(encoding latin1)))
    (loop '() (make-ls-state device io-device))))
+
+(defun stop ()
+  (erlang:exit (MODULE) 'normal))
 
 (defun loop (lines state)
   (let ((io-device (ls-state-device state)))
@@ -43,7 +45,7 @@
       ;; probably we have more cases
       (`#(#(reply ,lsp-proc-output) ,new-lsp-state)
        (logger:debug "lsp output: ~p" `(,lsp-proc-output))
-       (response-sender:send-response io-device lsp-proc-output)
+       (response-sender:send-response (MODULE) io-device lsp-proc-output)
        (logger:debug "Response sent!")
        (clj:-> state
                (set-ls-state-req (make-req))
@@ -62,4 +64,6 @@
     `#(,(string:trim (string:lowercase name)) ,(string:trim value))))
 
 (defun send (device msg)
-  (io:format device "~s" `(,msg)))
+  (case (file:write device msg)
+    ('ok (logger:notice "Response written."))
+    (`#(error ,reason) (logger:warning "Error on writing response: ~p" `(,reason)))))

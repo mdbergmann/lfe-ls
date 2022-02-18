@@ -1,9 +1,9 @@
 (defmodule response-sender
-  (export (send-response 2)))
+  (export (send-response 3)))
 
-(defun send-response (device json-response)
+(defun send-response (module device json-response)
   (logger:debug "Sending response...")
-  (lfe-ls-stdio:send device (%build-full-response json-response)))
+  (call module 'send device (%build-full-response json-response)))
 
 (defun %build-full-response (json-response)
   (let* ((resp-size (byte_size json-response))
