@@ -6,11 +6,11 @@
 (include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
-(deftest error-on-decoding
-  (is-equal `#(#(reply
-                 #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
-               ,(make-lsp-state))
-            (lsp-proc:process-input #"{\"Foo\"}" (make-lsp-state))))
+;; (deftest error-on-decoding
+;;   (is-equal `#(#(reply
+;;                  #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
+;;                ,(make-lsp-state))
+;;             (lsp-proc:process-input #"{\"Foo\"}" (make-lsp-state))))
 
 (deftest error-invalid-request--method-not-implemented
   (is-equal `#(#(noreply
@@ -18,28 +18,10 @@
                ,(make-lsp-state))
             (lsp-proc:process-input #"{
 \"jsonrpc\":\"2.0\",
+\"method\":\"not-supported\",
 \"id\":99,
-\"method\":\"not-supported\",
 \"params\":{}
 }" (make-lsp-state))))
-
-(deftest error-invalid-request--method-not-implemented--no-id
-  (is-equal `#(#(noreply
-                 #"{\"id\":null,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
-               ,(make-lsp-state))
-            (lsp-proc:process-input #"{
-\"jsonrpc\":\"2.0\",
-\"method\":\"not-supported\",
-\"params\":{}
-}" (make-lsp-state))))
-
-(deftest error-invalid-request--invalid-request
-  (is-equal `#(#(reply
-                 #"{\"id\":null,\"error\":{\"code\":-32600,\"message\":\"Invalid LSP header!\"}}")
-               ,(make-lsp-state))
-            (lsp-proc:process-input #"{
-\"jsonrpc\":\"2.0\",
-\"method\":\"not-supported\"}" (make-lsp-state))))
 
 (deftest process-simple-message
   (is-equal `#(#(reply #"{\"id\":99,\"result\":true}")

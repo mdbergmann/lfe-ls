@@ -20,22 +20,13 @@ where `code' is `reply' or `noreply'. `response' is the json-rpc respose payload
   (case (try
             (let ((json-input (ljson:decode input)))
               (logger:debug "json-input: ~p" `(,json-input))
-              (case json-input
-                (`(#(#"jsonrpc" #"2.0")
-                   #(#"id" ,req-id)
-                   #(#"method" ,req-method)
-                   #(#"params" ,req-params))
-                 (%process-method req-id req-method req-params state))
-                (`(#(#"jsonrpc" #"2.0")
-                   #(#"method" ,req-method)
-                   #(#"params" ,req-params))
-                 (%process-method 'null req-method req-params state))
-                (_
-                 (logger:warning "Invalid lsp header!")
-                 `#(#(reply ,(%make-error-response 'null
-                                                   (req-invalid-request-error)
-                                                   #"Invalid LSP header!"))
-                    ,state))))
+              (let* ((`#(#"jsonrpc" #"2.0") (find-tkey #"jsonrpc" json-input))
+                     (`#(#"method" ,req-method) (find-tkey #"method" json-input))
+                     (`#(#"params" ,req-params) (find-tkey #"params" json-input))
+                     (tmp-req-id (find-tkey #"id" json-input))
+                     (req-id (if (== '() tmp-req-id)
+                               'null (tcdr tmp-req-id))))
+                (%process-method req-id req-method req-params state)))
           (catch
             ((tuple type value stacktrace)
              (progn
