@@ -41,9 +41,10 @@
 
 (defun init (_args)
   (logger:debug "init (tcp-sup)")
-  (let (((tuple 'ok listen-socket) (gen_tcp:listen 10567 '(#(active false) binary))))
-    (logger:debug "listen (sup) ok")
-    ;;(spawn_link #'empty-listeners/0)
+  (let* (((tuple 'ok port) (application:get_env 'lfe-ls 'port))
+         ((tuple 'ok listen-socket) (gen_tcp:listen port '(#(active false) binary))))
+    (logger:info "Starting on port: ~p" `(,port))
+    (logger:debug "listen (tcp-sup) ok")
     `#(ok #(,(sup-flags)
             (,(child 'lfe-ls-tcp 'start_link `(,listen-socket)))))))
 
@@ -64,8 +65,8 @@
 (defun child (mod fun args)
   (logger:debug "mod: ~p, fun: ~p, args: ~p~n" `(,mod ,fun ,args))
   `#M(id ,mod
-      start #(,mod ,fun ,args)
-      restart permanent
-      shutdown 2000
-      type worker
-      modules (,mod)))
+         start #(,mod ,fun ,args)
+         restart permanent
+         shutdown 2000
+         type worker
+         modules (,mod)))

@@ -5,7 +5,12 @@
     {mod, {'lfe-ls-app', []}},
     {applications, [
         kernel,
-        stdlib
+        stdlib,
+        getopt,
+        lfe,
+        mochiweb,
+        jsx,
+        ljson
     ]},
     {env, []},
     {modules, []},

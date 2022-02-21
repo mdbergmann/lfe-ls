@@ -1,6 +1,6 @@
 (defmodule lfe-ls-tests
   (behaviour ltest-unit)
-  (import (from lfe-ls
+  (import (from lfe-ls-tcp
                 (concat-binary 2))))
 
 (include-lib "ltest/include/ltest-macros.lfe")
@@ -11,7 +11,7 @@
   `(progn
      (meck:new 'lsp-proc)
      (meck:new 'response-sender)
-     (let ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '()))
+     (let ((`#(ok ,pid) (gen_server:start 'lfe-ls-tcp '#(other) '()))
            (lsp-model (make-lsp-state)))
        (try
            (progn
@@ -23,7 +23,7 @@
      (meck:unload 'response-sender)))
 
 (deftest create-lfe-ls
-  (let ((`#(ok ,pid) (gen_server:start 'lfe-ls '#(other) '())))
+  (let ((`#(ok ,pid) (gen_server:start 'lfe-ls-tcp '#(other) '())))
     (io:format "~p~n" `(,pid))
     (gen_server:stop pid)))
 

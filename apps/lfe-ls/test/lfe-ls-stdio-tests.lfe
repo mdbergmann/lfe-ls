@@ -26,7 +26,7 @@
 (deftest send-initialize-receive-response
   (with-fixture
    (is (erlang:is_pid stdio))
-   (timer:sleep 500)
+   (timer:sleep 100)
    (case (file:read_file "/tmp/lfe-ls")
      (`#(ok ,bin-data)
       (is-equal `#(2074 31) (binary:match bin-data #"{\"id\":1,\"result\":{\"capabilities")))

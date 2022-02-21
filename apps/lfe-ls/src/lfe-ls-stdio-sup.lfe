@@ -6,7 +6,9 @@
    (stop 0))
   ;; callback implementation
   (export
-   (init 1)))
+   (init 1))
+  (export
+   (start-child 0)))
 
 ;;; ----------------
 ;;; config functions
@@ -38,10 +40,10 @@
 
 (defun init (_args)
   (logger:debug "init (stdio-sup)")
-  (let ((io-device (restrict-stdio-access)))
-    (io:setopts io-device '(binary))
-    `#(ok #(,(sup-flags)
-            (,(child 'lfe-ls-stdio 'start_link `(,io-device)))))))
+  ;;(let ((io-device (restrict-stdio-access)))
+  (io:setopts 'standard_io '(binary))
+  `#(ok #(,(sup-flags)
+          (,(child 'lfe-ls-stdio 'start_link `(standard_io))))))
 
 ;;; -----------------
 ;;; public functions
@@ -71,7 +73,6 @@ which can print warnings to standard output."
 
   (let ((pid (erlang:spawn #'noop-group-leader/0)))
     (erlang:group_leader pid (self)))
-
   (erlang:group_leader))
 
 (defun noop-group-leader ()
@@ -94,4 +95,4 @@ which can print warnings to standard output."
   (logger:debug "mod: ~p, fun: ~p, args: ~p~n" `(,mod ,fun ,args))
   `#M(id ,mod
          start #(,mod ,fun ,args)
-         modules (,mod)))
+         type worker))

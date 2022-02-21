@@ -98,7 +98,17 @@
    (handler-loop '() (make-ls-state device io-device))))
 
 (defun handler-loop (lines state)
+  (logger:notice "handler-loop, lines: ~p" `(,lines))
   (let ((io-device (ls-state-device state)))
+    (logger:notice "Reading line...")
+    ;; (case (io:get_line "")
+    ;;   ('eof
+    ;;    (logger:notice "eof"))
+    ;;   (`#(error ,err)
+    ;;    (logger:notice "stdio-error: ~p" `(,err)))
+    ;;   (line
+    ;;    (logger:notice "line: ~p" `(,line))
+    ;;    (handler-loop '() state)))))
     (case (io:get_line io-device "")
       (#"\n"
        (logger:notice "lines: ~p" `(,lines))
@@ -111,7 +121,7 @@
       ('eof
        (logger:notice "eof"))
       (`#(error ,err)
-       (logger:notice "error: ~p" `(,err)))
+       (logger:notice "stdio-error: ~p" `(,err)))
       (line
        (logger:notice "line: ~p" `(,line))
        (handler-loop (cons line lines) state))
