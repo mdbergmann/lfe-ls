@@ -113,28 +113,3 @@
 (defun json-msg-part2 ()
   #"6,17,18,19,20,21,22,23,24,25,26]}},\"documentHighlight\":{\"dynamicRegistration\":false},\"codeAction\":{\"dynamicRegistration\":false,\"codeActionLiteralSupport\":{\"codeActionKind\":{\"valueSet\":[\"quickfix\",\"refactor\",\"refactor.extract\",\"refactor.inline\",\"refactor.rewrite\",\"source\",\"source.organizeImports\"]}},\"isPreferredSupport\":true},\"formatting\":{\"dynamicRegistration\":false},\"rangeFormatting\":{\"dynamicRegistration\":false},\"rename\":{\"dynamicRegistration\":false},\"publishDiagnostics\":{\"relatedInformation\":false,\"codeDescriptionSupport\":false,\"tagSupport\":{\"valueSet\":[1,2]}}},\"experimental\":{}}}}")
 
-
-#|
-todos:
-
-OK - generate proper json response
-OK - generate proper json response on encoding error
-OK - add tests for unrecognized request
-OK - pass in state and return state from server process.
-OK - unrecognized request sends lsp error response
-OK - implement 'initialized' (notification)
-OK - change 'initialize' response for proper completion server capability
-OK - don't send error on unknown methods.
-OK - implement 'textDocument/didOpen' (notification)
-OK - implement 'textDocument/didChange' (notification)
-OK - implement 'textDocument/didClose' (notification)
-OK - implement 'textDocument/completion' with dummy response first
-OK - completion, find more edge cases
-OK - completion, add insertTest without arity.
-OK - completion, add lfe core forms
-=> - refactor to not use gen_tcp in response-sender directly
-- completion, prefilter functions, or module functions
-- implement 'shutdown'
-- allow flexible order of json-rpc attributes (lsp-proc:process-input)
-- review error handling and error responses
-|#

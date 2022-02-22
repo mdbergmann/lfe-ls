@@ -4,25 +4,39 @@
 (include-lib "ltest/include/ltest-macros.lfe")
 (include-lib "apps/lfe-ls/include/utils.lfe")
 
+(defmacro with-fixture body
+  `(progn
+     ;; (application:set_env 'lfe-ls 'transport "tcp")
+     ;; (application:set_env 'lfe-ls 'port 10567)
+     ;; (lfe-ls-app:start 'foo 'bar)
+     ;; (timer:sleep 1000)
+     ,@body
+     ;; (timer:sleep 1000)
+     ;; (lfe-ls-app:stop)
+     ;; (timer:sleep 500)
+     ))
+
 (deftest process-initialize-message
-  (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
-    (gen_tcp:send socket (make-simple-initialize-request))
-    (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
-      (is-equal "Content-Length: 197\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))
-    (gen_tcp:close socket)))
+  (with-fixture 
+   (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
+     (gen_tcp:send socket (make-simple-initialize-request))
+     (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
+       (is-equal "Content-Length: 197\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))
+     (gen_tcp:close socket))))
 
 (deftest process-completion-message
-  (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
-    (logger:notice "initializing...")
-    (gen_tcp:send socket (make-simple-initialize-request))
-    (gen_tcp:recv socket 0)
-    (logger:notice "sending didOpen...")
-    (gen_tcp:send socket (make-simple-textDocument/didOpen-request))
-    (logger:notice "sending completion...")
-    (gen_tcp:send socket (make-simple-textDocument/completion-request))
-    (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
-      (is-equal 1458 (string:length response)))
-    (gen_tcp:close socket)))
+  (with-fixture
+   (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
+     (logger:notice "initializing...")
+     (gen_tcp:send socket (make-simple-initialize-request))
+     (gen_tcp:recv socket 0)
+     (logger:notice "sending didOpen...")
+     (gen_tcp:send socket (make-simple-textDocument/didOpen-request))
+     (logger:notice "sending completion...")
+     (gen_tcp:send socket (make-simple-textDocument/completion-request))
+     (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
+       (is-equal 1458 (string:length response)))
+     (gen_tcp:close socket))))
 
 (defun make-simple-initialize-request ()
   #"Content-Length: 181\r\n\r\n{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"initialize\",\"params\":{\"processId\":null,\"clientInfo\":{\"name\":\"eglot\"},\"rootPath\":null,\"rootUri\":null,\"initializationOptions\":{},\"capabilities\":{}}}")
