@@ -60,6 +60,8 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
      (%on-textDocument/didClose-req id params state))
     (#"textDocument/didChange"
      (%on-textDocument/didChange-req id params state))
+    (#"textDocument/didSave"
+     (%on-textDocument/didSave-req id params state))
     (#"textDocument/completion"
      (%on-textDocument/completion-req id params state))
     (#"shutdown"
@@ -133,6 +135,15 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
                       (clj:-> document
                               (set-document-text new-text)
                               (set-document-version version)))))))))
+
+(defun %on-textDocument/didSave-req (id params state)
+  (case params
+    (`(#(#"textDocument" ,text-document))
+     (let ((`#(#"uri" ,uri) (find-tkey #"uri" text-document)))
+       `#(#(noreply null) ,state)))
+    (_
+     (logger:warning "Missing 'textDocument' param!")
+     `#(#(noreply null) ,state))))
 
 (defun %on-textDocument/completion-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))

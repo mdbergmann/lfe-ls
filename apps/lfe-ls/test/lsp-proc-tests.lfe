@@ -127,6 +127,13 @@
             (lsp-proc:process-input (make-simple-shutdown-request)
                                     (make-lsp-state))))
 
+(deftest process-textDocument/didSave-message
+  (let ((state (injected-document-state)))
+    (is-equal `#(#(noreply #"null") ,state)
+              (lsp-proc:process-input (make-simple-textDocument/didSave-request)
+                                      state))))
+
+
 (defun make-simple-initialize-request ()
   #"{
 \"jsonrpc\":\"2.0\",
@@ -170,6 +177,22 @@
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"}}
 }")
 
+(defun make-compl-example-textDocument/didOpen-request ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/didOpen\",
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"languageId\":\"lfe\",\"text\":\"(de\"}}
+}")
+
+(defun make-simple-textDocument/didSave-request ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/didSave\",
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"text\":\"the text\"}}
+}")
+
 (defun make-simple-textDocument/completion-request--invoked-trigger ()
   #"{
 \"jsonrpc\":\"2.0\",
@@ -184,14 +207,6 @@
 \"id\":99,
 \"method\":\"textDocument/completion\",
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":2,\"triggerCharacter\":\":\"}}
-}")
-
-(defun make-compl-example-textDocument/didOpen-request ()
-  #"{
-\"jsonrpc\":\"2.0\",
-\"id\":99,
-\"method\":\"textDocument/didOpen\",
-\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"languageId\":\"lfe\",\"text\":\"(de\"}}
 }")
 
 (defun make-simple-shutdown-request ()
