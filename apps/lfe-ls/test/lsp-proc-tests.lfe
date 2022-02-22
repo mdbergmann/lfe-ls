@@ -122,6 +122,11 @@
                                       new-state))
     (meck:unload 'completion-util)))
 
+(deftest process-shutdown
+  (is-equal `#(#(reply #"{\"id\":null,\"result\":null}") ,(make-lsp-state))
+            (lsp-proc:process-input (make-simple-shutdown-request)
+                                    (make-lsp-state))))
+
 (defun make-simple-initialize-request ()
   #"{
 \"jsonrpc\":\"2.0\",
@@ -189,6 +194,12 @@
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"languageId\":\"lfe\",\"text\":\"(de\"}}
 }")
 
+(defun make-simple-shutdown-request ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"method\":\"shutdown\",
+\"params\":{}
+}")
 
 #|
 initialize request:

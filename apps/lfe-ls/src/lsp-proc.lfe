@@ -24,8 +24,9 @@ where `code' is `reply' or `noreply'. `response' is the json-rpc respose payload
                      (`#(#"method" ,req-method) (find-tkey #"method" json-input))
                      (`#(#"params" ,req-params) (find-tkey #"params" json-input))
                      (tmp-req-id (find-tkey #"id" json-input))
-                     (req-id (if (== '() tmp-req-id)
-                               'null (tcdr tmp-req-id))))
+                     (req-id (case tmp-req-id
+                               ('() 'null)
+                               (id (tcdr id)))))
                 (%process-method req-id req-method req-params state)))
           (catch
             ((tuple type value stacktrace)
@@ -61,6 +62,8 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
      (%on-textDocument/didChange-req id params state))
     (#"textDocument/completion"
      (%on-textDocument/completion-req id params state))
+    (#"shutdown"
+     (%on-shutdown-req id state))
     (#"test-success"
      `#(#(reply ,(%make-result-response id 'true)) ,state))
     (_
@@ -152,6 +155,9 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
                          ('() 'null)
                          (else (tcdr else)))))))
            ,state)))))
+
+(defun %on-shutdown-req (id state)
+  `#(#(reply ,(%make-result-response id 'null)) ,state))
 
 ;; response factories
 
