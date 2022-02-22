@@ -129,10 +129,14 @@
 
 (deftest process-textDocument/didSave-message
   (let ((state (injected-document-state)))
-    (is-equal `#(#(noreply #"null") ,state)
-              (lsp-proc:process-input (make-simple-textDocument/didSave-request)
-                                      state))))
 
+    (meck:new 'comp-util)
+    (meck:expect 'comp-util 'compile-file (lambda (uri) '()))
+    
+    (is-equal `#(#(notify #"{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"diagnostics\":[]}}") ,state)
+              (lsp-proc:process-input (make-simple-textDocument/didSave-request)
+                                      state))
+    (meck:unload 'comp-util)))
 
 (defun make-simple-initialize-request ()
   #"{

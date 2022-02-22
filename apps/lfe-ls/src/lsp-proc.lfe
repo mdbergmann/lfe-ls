@@ -45,7 +45,8 @@ where `code' is `reply' or `noreply'. `response' is the json-rpc respose payload
 
 It returns:
 `(tuple (tuple code response) new-state)`
-where `code' is either `reply' or `noreply' indicating that the response has to be sent back to the requester or not. LSP notifications don't require reply but requests do.
+where `code' is either `reply' or `noreply' indicating that the response has to be sent back to the requester or not.
+LSP notifications don't require reply but requests do.
 `response' is the generated lsp response for the received request.
 `new-state' is for state changes that need to be transported back to the state keeper."
   (logger:notice "processing method: ~p" `(,method))
@@ -140,7 +141,14 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
   (case params
     (`(#(#"textDocument" ,text-document))
      (let ((`#(#"uri" ,uri) (find-tkey #"uri" text-document)))
-       `#(#(noreply null) ,state)))
+       (let* ((state-documents (lsp-state-documents state))
+              (document (map-get state-documents uri))
+              (version (document-version document)))
+         `#(#(notify ,(%make-notification
+                       #"textDocument/publishDiagnostics"
+                       (%make-diagnostic-params
+                        uri version
+                        (comp-util:compile-file uri)))) ,state))))
     (_
      (logger:warning "Missing 'textDocument' param!")
      `#(#(noreply null) ,state))))
@@ -203,3 +211,14 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
                     `(#(#"insertText" ,insert-text))
                     '()))))
              completions))
+
+(defun %make-notification (method params)
+  `(#(#"jsonrpc" #"2.0")
+    #(#"method" ,method)
+    #(#"params" ,params)))
+
+(defun %make-diagnostic-params (uri version diagnostics)
+  "Diagnostics are a list diagnostic records."
+  `(#(#"uri" ,uri)
+    #(#"version" ,version)
+    #(#"diagnostics" ())))
