@@ -21,6 +21,9 @@ Planned further support is:
 - hover support for showing documentation (via eldoc in Eglot).
 - sending compiler diagnostics back to the LSP client.
 
+Auto-completion is rudimentary right now. It completes global symbols/atoms, functions/macros and functions on a module basis by parsing the text and looking for ':' character which indicates completing for a module.
+There is a lot of room for improvement. I.e.: functions within a module could be parsed from the text, or variables within a let.
+
 
 ## Build [&#x219F;](#table-of-contents)
 
