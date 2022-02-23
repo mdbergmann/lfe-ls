@@ -2,15 +2,6 @@
 
 *LFE Language Server implementation*
 
-##### Table of Contents
-
-* [About](#about-)
-* [Build](#build-)
-* [Start the Project REPL](#start-the-repl-)
-* [Tests](#tests-)
-* [Usage](#usage-)
-* [License](#license-)
-
 ## About [&#x219F;](#table-of-contents)
 
 LFE language server written in LFE.
@@ -42,10 +33,21 @@ $ rebar3 lfe compile
 To create a release do:
 
 ```shell
-$ rebar3 as prod do release -o <release-path>
+$ rebar3 as prod do release,escriptize
 ```
 
-An executable can be started as `release/lfe-ls/bin/lfe-ls` when `release-path` was just 'release' within the project.
+An executable can be started as `_build/prod/bin/lfe-ls`.
+
+# Eglot for Emacs:
+
+To add lfe-ls as a server in Eglot the following can be added to the Eglot config:
+
+```
+(add-to-list
+   'eglot-server-programs
+   '(lfe-mode . ("/path/to/lfe-ls/_build/prod/bin/lfe-ls"
+                 "--transport" "tcp" "--port" :autoport)))
+```
 
 # Start the Project REPL [&#x219F;](#table-of-contents)
 
@@ -60,11 +62,6 @@ Starting the repl in this way wilkl automatically start the lfe-ls application a
 ```shell
 $ rebar3 as test eunit
 ```
-
-## Usage [&#x219F;](#table-of-contents)
-
-To use the lfe-ls server with Emacs Eglot you have to provide the host and port parameters. Those are 'localhost', port 10567.
-
 
 ## License [&#x219F;](#table-of-contents)
 
