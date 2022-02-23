@@ -22,6 +22,7 @@ This is largely work in progress. The following LSP functionality is implemented
 - `textDocument/didOpen` notification which loads and maintains documents in memory.
 - `textDocument/didChange` notification which updates the document in memory. Currently the sync transfers the full document. There is room form optimization here to implement a incremental sync.
 - `textDocument/didClose` notification which deletes the document in memory.
+- `textDocument/didSave` notification
 - `textDocument/completion` request/response implements global symbols and loaded modules as well as module functions.
 
 Planned further support is:
@@ -41,7 +42,7 @@ $ rebar3 lfe compile
 To create a release do:
 
 ```shell
-$ rebar3 as prod release -o <release-path>
+$ rebar3 as prod do release -o <release-path>
 ```
 
 An executable can be started as `release/lfe-ls/bin/lfe-ls` when `release-path` was just 'release' within the project.

@@ -19,8 +19,7 @@
               ((tuple type value stacktrace)
                (logger:error "Exception type: ~p, value: ~p, stacktrace: ~p"
                              `(,type ,value ,stacktrace)))))
-          (erlang:exit stdio 'normal)
-          ))
+          (erlang:exit stdio 'normal)))
       (file:delete "/tmp/lfe-ls"))))
 
 (deftest send-initialize-receive-response

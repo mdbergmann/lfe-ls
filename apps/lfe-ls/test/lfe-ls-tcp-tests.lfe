@@ -32,7 +32,7 @@
    (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
                                            `#(#(reply #"{\"Pong\"}")
                                               ,(make-lsp-state initialized 'true))))
-   (meck:expect 'response-sender 'send-response (lambda (_sender-pid json-response) 'ok))
+   (meck:expect 'response-sender 'send-response (lambda (_sender-pid response) 'ok))
 
    (let* ((response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
      (is-equal `#(ok #(ls-state nil #(req 8 8 #"{\"Ping\"}") #(lsp-state true))) response)
@@ -46,13 +46,13 @@
    (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
                                            `#(#(noreply #"{\"Pong\"}")
                                               ,(make-lsp-state initialized 'true))))
-   (meck:expect 'response-sender 'send-response (lambda (_sender-pid json-response) 'ok))
+   (meck:expect 'response-sender 'send-response (lambda (_sender-pid response) 'ok))
 
    (let* ((response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
      (is-equal `#(ok #(ls-state nil #(req 8 8 #"{\"Ping\"}") #(lsp-state true))) response)
      (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}" lsp-model)))
      (is (meck:validate 'lsp-proc))
-     (is (meck:called 'response-sender 'send-response '(_ #"{\"Pong\"}")))
+     (is (meck:called 'response-sender 'send-response '(_ #(noreply #"{\"Pong\"}"))))
      (is-equal 0 (meck:num_calls 'response-sender '_ '_))
      (is (meck:validate 'response-sender)))))
 
@@ -60,21 +60,21 @@
   (with-fixture
    (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
                                            `#(#(reply #"{\"Pong\"}") ,lsp-state)))
-   (meck:expect 'response-sender 'send-response (lambda (_sender-pid json-response) 'ok))
+   (meck:expect 'response-sender 'send-response (lambda (_sender-pid response) 'ok))
 
    (let* ((_ (gen_server:call pid `#(received #"Content-Length: 13\r\n\r\n{\"Hello\"}")))
           (response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
      (is-equal `#(ok #(ls-state nil #(req 8 8 #"{\"Ping\"}") _)) response)
      (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}" lsp-model)))
      (is (meck:validate 'lsp-proc))
-     (is (meck:called 'response-sender 'send-response '(_ #"{\"Pong\"}")))
+     (is (meck:called 'response-sender 'send-response '(_ #(reply #"{\"Pong\"}"))))
      (is (meck:validate 'response-sender)))))
 
 (deftest test-receive-package--partial-req
   (with-fixture
    (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
                                            `#(#(reply #"{\"WorldHello\"}") ,lsp-state)))
-   (meck:expect 'response-sender 'send-response (lambda (_sender-pid json-response) 'ok))
+   (meck:expect 'response-sender 'send-response (lambda (_sender-pid response) 'ok))
 
    (let* ((response1 (gen_server:call pid `#(received #"Content-Length: 14\r\n\r\n{\"Hello")))
           (response2 (gen_server:call pid `#(received #"World\"}"))))
@@ -82,14 +82,14 @@
      (is-match `#(ok #(ls-state nil #(req 14 14 #"{\"HelloWorld\"}") _)) response2)
      (is (meck:called 'lsp-proc 'process-input '(#"{\"HelloWorld\"}" lsp-model)))
      (is (meck:validate 'lsp-proc))
-     (is (meck:called 'response-sender 'send-response '(_ #"{\"WorldHello\"}")))
+     (is (meck:called 'response-sender 'send-response '(_ #(reply #"{\"WorldHello\"}"))))
      (is (meck:validate 'response-sender)))))
 
 (deftest test-receive-package--real-partial-req
   (with-fixture
    (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
                                            `#(#(reply #"dummy") ,lsp-state)))
-   (meck:expect 'response-sender 'send-response (lambda (_sender-pid json-response) 'ok))
+   (meck:expect 'response-sender 'send-response (lambda (_sender-pid response) 'ok))
 
    (let* ((`#(ok ,state1) (gen_server:call pid `#(received ,(start-json-msg))))
           (`#(ok ,state2) (gen_server:call pid `#(received ,(json-msg-part2)))))

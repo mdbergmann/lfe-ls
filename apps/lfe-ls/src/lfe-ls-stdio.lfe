@@ -61,13 +61,13 @@
   ((`#(send ,msg ,device) state)
    (case (file:write device msg)
      ('ok
-      (logger:notice "Response written."))
+      (logger:debug "Response written."))
      (`#(error ,reason)
       (logger:warning "Error on writing response: ~p" `(,reason))))
    `#(noreply state)))
 
 (defun handle_info (info state)
-  (logger:notice "Info: ~p" `(,info))
+  (logger:debug "Info: ~p" `(,info))
   `#(noreply state))
 
 (defun terminate (_reason _state)
@@ -82,7 +82,7 @@
 ;;; -----------------------
 
 (defun send (device msg)
-  (logger:notice "Sending response...")
+  (logger:debug "Sending response...")
   (gen_server:cast (MODULE) `#(send ,msg ,device)))
 
 (defun pid ()
@@ -94,24 +94,16 @@
 
 (defun init-stdio-handler
   ((`#(device ,io-device))
-   (logger:notice "init (stdio-handler)")
+   (logger:info "init (stdio-handler)")
    (handler-loop '() (make-ls-state device io-device))))
 
 (defun handler-loop (lines state)
-  (logger:notice "handler-loop, lines: ~p" `(,lines))
+  (logger:debug "handler-loop, lines: ~p" `(,lines))
   (let ((io-device (ls-state-device state)))
-    (logger:notice "Reading line...")
-    ;; (case (io:get_line "")
-    ;;   ('eof
-    ;;    (logger:notice "eof"))
-    ;;   (`#(error ,err)
-    ;;    (logger:notice "stdio-error: ~p" `(,err)))
-    ;;   (line
-    ;;    (logger:notice "line: ~p" `(,line))
-    ;;    (handler-loop '() state)))))
+    (logger:debug "Reading line...")
     (case (io:get_line io-device "")
       (#"\n"
-       (logger:notice "lines: ~p" `(,lines))
+       (logger:debug "lines: ~p" `(,lines))
        (let* ((headers (%parse-headers lines))
               (bin-len (proplists:get_value #"content-length" headers))
               (len (erlang:binary_to_integer bin-len))
@@ -119,11 +111,11 @@
               (new-state (%on-complete-req payload state)))
          (handler-loop '() new-state)))
       ('eof
-       (logger:notice "eof"))
+       (logger:debug "eof"))
       (`#(error ,err)
-       (logger:notice "stdio-error: ~p" `(,err)))
+       (logger:debug "stdio-error: ~p" `(,err)))
       (line
-       (logger:notice "line: ~p" `(,line))
+       (logger:debug "line: ~p" `(,line))
        (handler-loop (cons line lines) state))
       )))
 
@@ -133,15 +125,10 @@
   (let ((lsp-state (ls-state-lsp-state state))
         (io-device (ls-state-device state)))
     (case (lsp-proc:process-input complete-req lsp-state)
-      (`#(#(reply ,lsp-proc-output) ,new-lsp-state)
-       (logger:debug "lsp output: ~p" `(,lsp-proc-output))
-       (response-sender:send-response (MODULE) io-device lsp-proc-output)
+      (`#(,response ,new-lsp-state)
+       (logger:debug "lsp output: ~p" `(,response))
+       (response-sender:send-response (MODULE) io-device response)
        (logger:debug "Response sent!")
-       (clj:-> state
-               (set-ls-state-req (make-req))
-               (set-ls-state-lsp-state new-lsp-state)))
-      (`#(#(noreply ,_) ,new-lsp-state)
-       (logger:debug "lsp output with noreply")
        (clj:-> state
                (set-ls-state-req (make-req))
                (set-ls-state-lsp-state new-lsp-state))))))

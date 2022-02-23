@@ -49,7 +49,7 @@ where `code' is either `reply' or `noreply' indicating that the response has to 
 LSP notifications don't require reply but requests do.
 `response' is the generated lsp response for the received request.
 `new-state' is for state changes that need to be transported back to the state keeper."
-  (logger:notice "processing method: ~p" `(,method))
+  (logger:info "processing method: ~p" `(,method))
   (case method
     (#"initialize"
      (%on-initialize-req id params state))
