@@ -38,7 +38,7 @@ $ rebar3 as prod do release,escriptize
 
 An executable can be started as `_build/prod/bin/lfe-ls`.
 
-# Eglot for Emacs:
+## Eglot for Emacs:
 
 To add lfe-ls as a server in Eglot the following can be added to the Eglot config:
 
