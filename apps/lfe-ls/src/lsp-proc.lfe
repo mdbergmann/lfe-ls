@@ -55,7 +55,7 @@ LSP notifications don't require reply but requests do.
     (#"initialize"
      (%on-initialize-req id params state))
     (#"initialized"
-     `#(,(%on-initialized-req id params) ,state))
+     (%on-initialized-req id params state))
     (#"textDocument/didOpen"
      (%on-textDocument/didOpen-req id params state))
     (#"textDocument/didClose"
@@ -83,8 +83,8 @@ LSP notifications don't require reply but requests do.
   `#(#(reply ,(%make-result-response id (%make-initialize-result params)))
      ,(set-lsp-state-initialized state 'true)))
 
-(defun %on-initialized-req (id params)
-  `#(noreply null))
+(defun %on-initialized-req (id params state)
+  `#(#(noreply null) ,state))
 
 (defun %on-textDocument/didOpen-req (id params state)
   (let ((state-documents (lsp-state-documents state)))
