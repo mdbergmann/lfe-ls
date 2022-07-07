@@ -112,6 +112,7 @@ Returns: #(ok new-state)"
              (set-ls-state-req state new-req)))))
 
 (defun handle_cast
+  "'receive is used to simulate TCP receival from a test"
   (('accept state)
    (%accept-handler state))
   ((`#(received ,msg) state)
@@ -122,6 +123,7 @@ Returns: #(ok new-state)"
    `#(noreply ,state)))
 
 (defun handle_call
+  "'receive is used to simulate TCP receival from a test"
   ((`#(received ,msg) _from state)
    (let ((`#(,code ,new-state) (%on-tcp-receive msg state)))
      `#(reply #(,code ,new-state) ,new-state)))
@@ -131,6 +133,7 @@ Returns: #(ok new-state)"
    `#(reply #(error "Unknown command.") ,state)))
 
 (defun handle_info
+  "LSP requests come in via 'tcp"
   ((`#(tcp ,socket ,msg) state)
    (let ((`#(,code ,new-state) (%on-tcp-receive msg state)))
      (inet:setopts socket '(#(active once)))

@@ -15,7 +15,8 @@ LSP server state.
 
 This function returns:
 `(tuple (tuple code response) state)`
-where `code' is `reply' or `noreply'. `response' is the json-rpc respose payload.
+where `code' is `reply', `noreply' or `notify'.
+`response' is the json-rpc respose payload.
 `state' is the new, if changed, or old LSP server state."
   (case (try
             (let ((json-input (ljson:decode input)))
@@ -148,7 +149,7 @@ LSP notifications don't require reply but requests do.
                        #"textDocument/publishDiagnostics"
                        (%make-diagnostic-params
                         uri version
-                        (comp-util:compile-file uri)))) ,state))))
+                        (compile-util:compile-file uri)))) ,state))))
     (_
      (logger:warning "Missing 'textDocument' param!")
      `#(#(noreply null) ,state))))
