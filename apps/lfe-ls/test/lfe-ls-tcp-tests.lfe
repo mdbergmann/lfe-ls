@@ -29,9 +29,8 @@
 
 (deftest test-receive-package--full-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
-                                           `#(#(reply #"{\"Pong\"}")
-                                              ,(make-lsp-state initialized 'true))))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state send-resp-fun)
+                                           (make-lsp-state initialized 'true)))
    (meck:expect 'response-sender 'send-response (lambda (_sender-pid response) 'ok))
 
    (let* ((response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
@@ -43,9 +42,8 @@
 
 (deftest test-receive-package--full-req--noreply
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
-                                           `#(#(noreply #"{\"Pong\"}")
-                                              ,(make-lsp-state initialized 'true))))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state send-resp-fun)
+                                           `(make-lsp-state initialized 'true)))
    (meck:expect 'response-sender 'send-response (lambda (_sender-pid response) 'ok))
 
    (let* ((response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}"))))
@@ -58,8 +56,8 @@
 
 (deftest test-receive-package--incomplete-req--replaced-by-new-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
-                                           `#(#(reply #"{\"Pong\"}") ,lsp-state)))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state send-resp-fun)
+                                           lsp-state))
    (meck:expect 'response-sender 'send-response (lambda (_sender-pid response) 'ok))
 
    (let* ((_ (gen_server:call pid `#(received #"Content-Length: 13\r\n\r\n{\"Hello\"}")))
@@ -72,8 +70,8 @@
 
 (deftest test-receive-package--partial-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
-                                           `#(#(reply #"{\"WorldHello\"}") ,lsp-state)))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state send-resp-fun)
+                                           lsp-state))
    (meck:expect 'response-sender 'send-response (lambda (_sender-pid response) 'ok))
 
    (let* ((response1 (gen_server:call pid `#(received #"Content-Length: 14\r\n\r\n{\"Hello")))
@@ -87,8 +85,8 @@
 
 (deftest test-receive-package--real-partial-req
   (with-fixture
-   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state server-pid)
-                                           `#(#(reply #"dummy") ,lsp-state)))
+   (meck:expect 'lsp-proc 'process-input (lambda (json-in lsp-state send-resp-fun)
+                                           lsp-state))
    (meck:expect 'response-sender 'send-response (lambda (_sender-pid response) 'ok))
 
    (let* ((`#(ok ,state1) (gen_server:call pid `#(received ,(start-json-msg))))

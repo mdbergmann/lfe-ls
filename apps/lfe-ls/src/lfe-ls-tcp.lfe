@@ -101,13 +101,16 @@ Returns: #(ok new-state)"
              (let ((complete-req (req-data new-req)))
                (logger:debug "Complete request: ~p" `(,complete-req))
                (logger:notice "Complete request of size: ~p" `(,(byte_size complete-req)))
-               (case (lsp-proc:process-input complete-req lsp-state)
+               (case (lsp-proc:process-input
+                      complete-req
+                      lsp-state
+                      (lambda (lsp-proc-result)
+                        (logger:debug "lsp output: ~p" `(,lsp-proc-result))
+                        (response-sender:send-response (MODULE) sock lsp-proc-result)
+                        (logger:debug "Response sent!")))
                  (`#(,response ,new-lsp-state)
-                  (logger:debug "lsp output: ~p" `(,response))
-                  (response-sender:send-response (MODULE) sock response)
-                  (logger:debug "Response sent!")
                   (clj:-> state
-                          (set-ls-state-req (make-req))
+                          (set-ls-state-req (make-req)) ; reset
                           (set-ls-state-lsp-state new-lsp-state)))))
              (set-ls-state-req state new-req)))))
 
