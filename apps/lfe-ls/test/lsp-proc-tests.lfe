@@ -1,5 +1,6 @@
 (defmodule lsp-proc-tests
-  (behaviour ltest-unit))
+  (behaviour ltest-unit)
+  (export (lsp-resp-receiver 1)))
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
@@ -11,6 +12,27 @@
 ;;                  #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
 ;;                ,(make-lsp-state))
 ;;             (lsp-proc:process-input #"{\"Foo\"}" (make-lsp-state))))
+
+(defun lsp-resp-receiver (lsp-resp)
+  (receive
+    ((tuple from 'get)
+     (! from `#(get-resp ,lsp-resp))
+     (lsp-resp-receiver lsp-resp))
+    ((tuple from new-response)
+     (lsp-resp-receiver new-response))
+    ('terminate
+     'ok)))
+
+(deftest test-lsp-receiver
+  (let ((receiver (spawn (MODULE) 'lsp-resp-receiver '(()))))
+    (! receiver `#(,(self) get))
+    (receive
+      ((tuple 'get-resp lsp-resp)
+       (is-equal '() lsp-resp))
+      (after 1000
+        (! receiver 'terminate)))
+    (! receiver 'terminate))
+  )
 
 (deftest error-invalid-request--method-not-implemented
   (is-equal `#(#(noreply
