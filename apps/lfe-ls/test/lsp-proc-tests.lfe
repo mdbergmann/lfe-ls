@@ -7,32 +7,43 @@
 (include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
+(defun lsp-resp-receiver (lsp-resp)
+  (receive
+    ((tuple from 'get)
+     (! from `#(get-resp ,lsp-resp))
+     (lsp-resp-receiver lsp-resp))
+    ((tuple from 'put new-response)
+     (lsp-resp-receiver new-response))
+    ('terminate
+     'ok)))
+
+(defmacro with-fixture body
+  `(let ((receiver (spawn (MODULE) 'lsp-resp-receiver '(()))))
+     ,@body
+    (! receiver 'terminate)))
+
+
 ;; (deftest error-on-decoding
 ;;   (is-equal `#(#(reply
 ;;                  #"{\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Error on parsing json!\"}}")
 ;;                ,(make-lsp-state))
 ;;             (lsp-proc:process-input #"{\"Foo\"}" (make-lsp-state))))
 
-(defun lsp-resp-receiver (lsp-resp)
-  (receive
-    ((tuple from 'get)
-     (! from `#(get-resp ,lsp-resp))
-     (lsp-resp-receiver lsp-resp))
-    ((tuple from new-response)
-     (lsp-resp-receiver new-response))
-    ('terminate
-     'ok)))
-
 (deftest test-lsp-receiver
-  (let ((receiver (spawn (MODULE) 'lsp-resp-receiver '(()))))
-    (! receiver `#(,(self) get))
-    (receive
-      ((tuple 'get-resp lsp-resp)
-       (is-equal '() lsp-resp))
-      (after 1000
-        (! receiver 'terminate)))
-    (! receiver 'terminate))
-  )
+  (with-fixture
+   (! receiver `#(,(self) get))
+   (receive
+     ((tuple 'get-resp lsp-resp)
+      (is-equal '() lsp-resp))
+     (after 500
+       (is 'false)))
+   (! receiver `#(,(self) put 0))
+   (! receiver `#(,(self) get))
+   (receive
+     ((tuple 'get-resp lsp-resp)
+      (is-equal 0 lsp-resp))
+     (after 500
+       (is 'false)))))
 
 (deftest error-invalid-request--method-not-implemented
   (is-equal `#(#(noreply
