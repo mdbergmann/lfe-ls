@@ -29,6 +29,26 @@
 ;;                ,(make-lsp-state))
 ;;             (lsp-proc:process-input #"{\"Foo\"}" (make-lsp-state))))
 
+(defmacro expected-result-p (expected-result)
+  "Probes `receiver` for result."
+  `(utils:assert-cond (lambda ()
+                        (! receiver `#(,(self) get))
+                        (receive
+                          ((tuple 'get-resp lsp-resp)
+                           (cond
+                            ((?= expected-result
+                                 lsp-resp)
+                             'true)
+                            (else 'false)))
+                          (after 500
+                            'false)))
+                      1000))
+
+(defmacro sender-fun ()
+  "lsp-proc will call this lambda this one will just push the computed result to our actor"
+  `(lambda (lsp-resp)
+    (! receiver `#(,(self) put ,lsp-resp))))
+
 (deftest test-lsp-receiver
   (with-fixture
    (! receiver `#(,(self) get))
@@ -55,23 +75,10 @@
 \"params\":{}
 }"
                                      (make-lsp-state)
-                                     (lambda (lsp-resp)
-                                       ;; lsp-proc will call this lambda
-                                       ;; this one will just push the computed result to our actor
-                                       (! receiver `#(,(self) put ,lsp-resp)))))
-   (is (utils:assert-cond (lambda ()
-                            (! receiver `#(,(self) get))
-                            (receive
-                              ((tuple 'get-resp lsp-resp)
-                               (cond
-                                ((?= #(noreply
-                                       #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")
-                                     lsp-resp)
-                                 'true)
-                                (else 'false)))
-                              (after 500
-                                'false)))
-                          1000))))
+                                     (sender-fun)))
+   (is (expected-result-p
+        #(noreply
+          #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")))))
 
 (deftest process-simple-message
   (with-fixture
@@ -83,22 +90,8 @@
 \"params\":{}
 }"
                                      (make-lsp-state)
-                                     (lambda (lsp-resp)
-                                       ;; lsp-proc will call this lambda
-                                       ;; this one will just push the computed result to our actor
-                                       (! receiver `#(,(self) put ,lsp-resp)))))
-      (is (utils:assert-cond (lambda ()
-                            (! receiver `#(,(self) get))
-                            (receive
-                              ((tuple 'get-resp lsp-resp)
-                               (cond
-                                ((?= #(reply #"{\"id\":99,\"result\":true}")
-                                     lsp-resp)
-                                 'true)
-                                (else 'false)))
-                              (after 500
-                                'false)))
-                          1000))))
+                                     (sender-fun)))
+      (is (expected-result-p #(reply #"{\"id\":99,\"result\":true}")))))
 
 (deftest process-simple-initialize-message
   (is-equal `#(#(reply
