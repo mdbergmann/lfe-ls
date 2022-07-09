@@ -45,7 +45,8 @@
                       1000))
 
 (defmacro sender-fun ()
-  "lsp-proc will call this lambda this one will just push the computed result to our actor"
+  "lsp-proc will call this lambda.
+This one will just push the computed result to our fake-lsp-resp-sender actor"
   `(lambda (lsp-resp)
     (! receiver `#(,(self) put ,lsp-resp))))
 
@@ -94,23 +95,31 @@
       (is (expected-result-p #(reply #"{\"id\":99,\"result\":true}")))))
 
 (deftest process-simple-initialize-message
-  (is-equal `#(#(reply
-                 #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")
-               ,(make-lsp-state initialized 'true))
-            (lsp-proc:process-input (make-simple-initialize-request)
-                                    (make-lsp-state))))
+  (with-fixture
+   (is-equal (make-lsp-state initialized 'true)
+             (lsp-proc:process-input (make-simple-initialize-request)
+                                     (make-lsp-state)
+                                     (sender-fun)))
+   (is (expected-result-p
+        #(reply
+          #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")))))
 
 (deftest process-initialized-message
-  (is-equal `#(#(noreply #"null") ,(make-lsp-state))
-            (lsp-proc:process-input (make-initialized-notify-request)
-                                    (make-lsp-state))))
+  (with-fixture
+   (is-equal (make-lsp-state)
+             (lsp-proc:process-input (make-initialized-notify-request)
+                                     (make-lsp-state)
+                                     (sender-fun)))
+   (is (expected-result-p #(noreply #"null")))))
 
 (deftest process-textDocument/didOpen-message
-  (is-equal `#(#(noreply #"null")
-               #(lsp-state false #M(#"file:///foobar.lfe"
-                                    #(document #"file:///foobar.lfe" 1 #"the-document-text"))))
-            (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
-                                    (make-lsp-state))))
+  (with-fixture
+   (is-equal #(lsp-state false #M(#"file:///foobar.lfe"
+                                  #(document #"file:///foobar.lfe" 1 #"the-document-text")))
+             (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
+                                     (make-lsp-state)
+                                     (sender-fun)))
+   (is (expected-result-p #(noreply #"null")))))
 
 (deftest process-textDocument/didOpen-message--second-doc
   (is-equal `#(#(noreply #"null")
