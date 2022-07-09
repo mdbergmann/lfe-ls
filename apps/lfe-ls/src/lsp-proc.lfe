@@ -1,11 +1,11 @@
 (defmodule lsp-proc
   (export
-   (process-input 2)))
+   (process-input 3)))
 
 (include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
-(defun process-input (input state)
+(defun process-input (input state resp-sender-fun)
   "Main interface function.
 Takes string `input' (the request json-rpc payload) and produces
 output, the json-rpc response, as string.
@@ -13,69 +13,70 @@ Conversion to and from json<->string is done in this function.
 The `state' argument is used an instance of `lsp-state' record that represents the current
 LSP server state.
 
-This function returns:
-`(tuple (tuple code response) state)`
-where `code' is `reply', `noreply' or `notify'.
-`response' is the json-rpc respose payload.
-`state' is the new, if changed, or old LSP server state."
-  (case (try
-            (let ((json-input (ljson:decode input)))
-              (logger:debug "json-input: ~p" `(,json-input))
-              (let* ((`#(#"jsonrpc" #"2.0") (find-tkey #"jsonrpc" json-input))
-                     (`#(#"method" ,req-method) (find-tkey #"method" json-input))
-                     (`#(#"params" ,req-params) (find-tkey #"params" json-input))
-                     (tmp-req-id (find-tkey #"id" json-input))
-                     (req-id (case tmp-req-id
-                               ('() 'null)
-                               (id (tcdr id)))))
-                (%process-method req-id req-method req-params state)))
-          (catch
-            ((tuple type value stacktrace)
-             (progn
-               (logger:warning "Error on json operation: ~p, type: ~p, value: ~p"
-                               `(,stacktrace ,type ,value))
-               `#(#(reply ,(%make-error-response 'null
-                                                 (req-parse-error)
-                                                 #"Error on parsing json!"))
-                  ,state)))))
-    (`#(#(,code ,response) ,state)
-     `#(#(,code ,(ljson:encode response)) ,state))))
+This function returns a newly computed state for the caller."
+  (try
+      (let ((json-input (ljson:decode input)))
+        (logger:debug "json-input: ~p" `(,json-input))
+        (let* ((`#(#"jsonrpc" #"2.0") (find-tkey #"jsonrpc" json-input))
+               (`#(#"method" ,req-method) (find-tkey #"method" json-input))
+               (`#(#"params" ,req-params) (find-tkey #"params" json-input))
+               (tmp-req-id (find-tkey #"id" json-input))
+               (req-id (case tmp-req-id
+                         ('() 'null)
+                         (id (tcdr id)))))
+          (%process-method req-id req-method req-params state resp-sender-fun)))
+    (catch
+      ((tuple type value stacktrace)
+       (progn
+         (logger:warning "Error on json operation: ~p, type: ~p, value: ~p"
+                         `(,stacktrace ,type ,value))
+         (funcall resp-sender-fun
+                  `#(reply ,(ljson:encode
+                             (%make-error-response
+                              'null
+                              (req-parse-error)
+                              #"Error on parsing json!"))))
+         state)))))
 
-(defun %process-method (id method params state)
+(defun %process-method (id method params state resp-sender-fun)
   "This function is the main lsp 'method' dispatcher.
-
-It returns:
-`(tuple (tuple code response) new-state)`
-where `code' is either `reply' or `noreply' indicating that the response has to be sent back to the requester or not.
-LSP notifications don't require reply but requests do.
-`response' is the generated lsp response for the received request.
-`new-state' is for state changes that need to be transported back to the state keeper."
+It returns a new state.
+The response, either synchronous or asynchronous as notification is done via `resp-sender-fun`
+which requires a `(tuple code response)` tuple where:
+`code`: is `noreply`, `reply` or `notify`.
+`response`: is the LSP JSON response"
   (logger:info "processing method: ~p" `(,method))
-  (case method
-    (#"initialize"
-     (%on-initialize-req id params state))
-    (#"initialized"
-     (%on-initialized-req id params state))
-    (#"textDocument/didOpen"
-     (%on-textDocument/didOpen-req id params state))
-    (#"textDocument/didClose"
-     (%on-textDocument/didClose-req id params state))
-    (#"textDocument/didChange"
-     (%on-textDocument/didChange-req id params state))
-    (#"textDocument/didSave"
-     (%on-textDocument/didSave-req id params state))
-    (#"textDocument/completion"
-     (%on-textDocument/completion-req id params state))
-    (#"shutdown"
-     (%on-shutdown-req id state))
-    (#"test-success"
-     `#(#(reply ,(%make-result-response id 'true)) ,state))
-    (_
-     `#(#(noreply ,(%make-error-response id
-                                         (req-invalid-request-error)
-                                         (concat-binary #"Method not supported: '"
-                                                        (concat-binary method #"'!"))))
-        ,state))))
+  (case (case method
+          (#"initialize"
+           (%on-initialize-req id params state))
+          (#"initialized"
+           (%on-initialized-req id params state))
+          (#"textDocument/didOpen"
+           (%on-textDocument/didOpen-req id params state))
+          (#"textDocument/didClose"
+           (%on-textDocument/didClose-req id params state))
+          (#"textDocument/didChange"
+           (%on-textDocument/didChange-req id params state))
+          (#"textDocument/didSave"
+           (%on-textDocument/didSave-req id params state))
+          (#"textDocument/completion"
+           (%on-textDocument/completion-req id params state))
+          (#"shutdown"
+           (%on-shutdown-req id state))
+          (#"test-success"
+           `#(#(reply
+                ,(%make-result-response id 'true)) ,state))
+          (_
+           `#(#(noreply
+                ,(%make-error-response
+                  id
+                  (req-invalid-request-error)
+                  (concat-binary #"Method not supported: '"
+                                 (concat-binary method #"'!"))))
+              ,state)))
+    ((tuple (tuple code response) state)
+     (funcall resp-sender-fun `#(,code ,(ljson:encode response)))
+     state)))
 
 ;; method handlers
 
