@@ -1,24 +1,24 @@
 (defmodule lsp-proc-tests
   (behaviour ltest-unit)
-  (export (lsp-resp-receiver 1)))
+  (export (fake-lsp-resp-sender 1)))
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
 (include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
-(defun lsp-resp-receiver (lsp-resp)
+(defun fake-lsp-resp-sender (lsp-resp)
   (receive
     ((tuple from 'get)
      (! from `#(get-resp ,lsp-resp))
-     (lsp-resp-receiver lsp-resp))
+     (fake-lsp-resp-sender lsp-resp))
     ((tuple from 'put new-response)
-     (lsp-resp-receiver new-response))
+     (fake-lsp-resp-sender new-response))
     ('terminate
      'ok)))
 
 (defmacro with-fixture body
-  `(let ((receiver (spawn (MODULE) 'lsp-resp-receiver '(()))))
+  `(let ((receiver (spawn (MODULE) 'fake-lsp-resp-sender '(()))))
      ,@body
     (! receiver 'terminate)))
 
