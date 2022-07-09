@@ -122,17 +122,19 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (is (expected-result-p #(noreply #"null")))))
 
 (deftest process-textDocument/didOpen-message--second-doc
-  (is-equal `#(#(noreply #"null")
-               #(lsp-state false #M(#"file:///foobar.lfe"
-                                    #(document #"file:///foobar.lfe" 1 #"the-document-text")
-                                    #"file:///foobar2.lfe"
-                                    #(document #"file:///foobar2.lfe" 2 #"the-document-text2"))))
-            (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
-                                    (make-lsp-state documents
-                                                    #M(#"file:///foobar2.lfe"
-                                                       #(document #"file:///foobar2.lfe"
-                                                                  2
-                                                                  #"the-document-text2"))))))
+  (with-fixture
+   (is-equal #(lsp-state false #M(#"file:///foobar.lfe"
+                                  #(document #"file:///foobar.lfe" 1 #"the-document-text")
+                                  #"file:///foobar2.lfe"
+                                  #(document #"file:///foobar2.lfe" 2 #"the-document-text2")))
+             (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
+                                     (make-lsp-state documents
+                                                     #M(#"file:///foobar2.lfe"
+                                                        #(document #"file:///foobar2.lfe"
+                                                                   2
+                                                                   #"the-document-text2")))
+                                     (sender-fun)))
+   (is (expected-result-p #(noreply #"null")))))
 
 (defun injected-document-state ()
   (let* ((state (make-lsp-state))
