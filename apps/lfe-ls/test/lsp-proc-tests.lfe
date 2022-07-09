@@ -74,14 +74,31 @@
                           1000))))
 
 (deftest process-simple-message
-  (is-equal `#(#(reply #"{\"id\":99,\"result\":true}")
-               ,(make-lsp-state))
-            (lsp-proc:process-input #"{
+  (with-fixture
+   (is-equal (make-lsp-state)
+             (lsp-proc:process-input #"{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"test-success\",
 \"params\":{}
-}" (make-lsp-state))))
+}"
+                                     (make-lsp-state)
+                                     (lambda (lsp-resp)
+                                       ;; lsp-proc will call this lambda
+                                       ;; this one will just push the computed result to our actor
+                                       (! receiver `#(,(self) put ,lsp-resp)))))
+      (is (utils:assert-cond (lambda ()
+                            (! receiver `#(,(self) get))
+                            (receive
+                              ((tuple 'get-resp lsp-resp)
+                               (cond
+                                ((?= #(reply #"{\"id\":99,\"result\":true}")
+                                     lsp-resp)
+                                 'true)
+                                (else 'false)))
+                              (after 500
+                                'false)))
+                          1000))))
 
 (deftest process-simple-initialize-message
   (is-equal `#(#(reply
