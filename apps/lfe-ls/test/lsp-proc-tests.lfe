@@ -137,23 +137,26 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (is (expected-result-p #(noreply #"null")))))
 
 (defun injected-document-state ()
-  (let* ((state (make-lsp-state))
-         (new-state (tcdr (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
-                                                  state))))
-    new-state))
+  (make-lsp-state documents
+                  #M(#"file:///foobar.lfe"
+                     #(document #"file:///foobar.lfe" 1 #"the-document-text"))))
 
 (deftest process-textDocument/didChange-message
-  (is-equal `#(#(noreply #"null")
-               #(lsp-state false #M(#"file:///foobar.lfe"
-                                    #(document #"file:///foobar.lfe" 2 #"thedocument-text"))))
-            (lsp-proc:process-input (make-simple-textDocument/didChange-request)
-                                    (injected-document-state))))
+  (with-fixture
+   (is-equal #(lsp-state false #M(#"file:///foobar.lfe"
+                                  #(document #"file:///foobar.lfe" 2 #"thedocument-text")))
+             (lsp-proc:process-input (make-simple-textDocument/didChange-request)
+                                     (injected-document-state)
+                                     (sender-fun)))
+   (is (expected-result-p #(noreply #"null")))))
 
 (deftest process-textDocument/didClose-message
-  (is-equal `#(#(noreply #"null")
-               #(lsp-state false #M()))
-            (lsp-proc:process-input (make-simple-textDocument/didClose-request)
-                                    (injected-document-state))))
+  (with-fixture
+   (is-equal #(lsp-state false #M())
+             (lsp-proc:process-input (make-simple-textDocument/didClose-request)
+                                     (injected-document-state)
+                                     (sender-fun)))
+   (is (expected-result-p #(noreply #"null")))))
 
 (deftest process-textDocument/completion-message--invoked-trigger
   (let* ((state (make-lsp-state))
