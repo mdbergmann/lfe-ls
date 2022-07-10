@@ -44,7 +44,7 @@
                             'false)))
                       1000))
 
-(defmacro sender-fun ()
+(defmacro fake-sender-fun ()
   "lsp-proc will call this lambda.
 This one will just push the computed result to our fake-lsp-resp-sender actor"
   `(lambda (lsp-resp)
@@ -76,7 +76,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 \"params\":{}
 }"
                                      (make-lsp-state)
-                                     (sender-fun)))
+                                     (fake-sender-fun)))
    (is (expected-result-p
         #(noreply
           #"{\"id\":99,\"error\":{\"code\":-32600,\"message\":\"Method not supported: 'not-supported'!\"}}")))))
@@ -91,7 +91,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 \"params\":{}
 }"
                                      (make-lsp-state)
-                                     (sender-fun)))
+                                     (fake-sender-fun)))
       (is (expected-result-p #(reply #"{\"id\":99,\"result\":true}")))))
 
 (deftest process-simple-initialize-message
@@ -99,7 +99,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (is-equal (make-lsp-state initialized 'true)
              (lsp-proc:process-input (make-simple-initialize-request)
                                      (make-lsp-state)
-                                     (sender-fun)))
+                                     (fake-sender-fun)))
    (is (expected-result-p
         #(reply
           #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")))))
@@ -109,7 +109,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (is-equal (make-lsp-state)
              (lsp-proc:process-input (make-initialized-notify-request)
                                      (make-lsp-state)
-                                     (sender-fun)))
+                                     (fake-sender-fun)))
    (is (expected-result-p #(noreply #"null")))))
 
 (deftest process-textDocument/didOpen-message
@@ -118,7 +118,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
                                   #(document #"file:///foobar.lfe" 1 #"the-document-text")))
              (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
                                      (make-lsp-state)
-                                     (sender-fun)))
+                                     (fake-sender-fun)))
    (is (expected-result-p #(noreply #"null")))))
 
 (deftest process-textDocument/didOpen-message--second-doc
@@ -133,7 +133,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
                                                         #(document #"file:///foobar2.lfe"
                                                                    2
                                                                    #"the-document-text2")))
-                                     (sender-fun)))
+                                     (fake-sender-fun)))
    (is (expected-result-p #(noreply #"null")))))
 
 (defun injected-document-state ()
@@ -147,7 +147,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
                                   #(document #"file:///foobar.lfe" 2 #"thedocument-text")))
              (lsp-proc:process-input (make-simple-textDocument/didChange-request)
                                      (injected-document-state)
-                                     (sender-fun)))
+                                     (fake-sender-fun)))
    (is (expected-result-p #(noreply #"null")))))
 
 (deftest process-textDocument/didClose-message
@@ -155,7 +155,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (is-equal #(lsp-state false #M())
              (lsp-proc:process-input (make-simple-textDocument/didClose-request)
                                      (injected-document-state)
-                                     (sender-fun)))
+                                     (fake-sender-fun)))
    (is (expected-result-p #(noreply #"null")))))
 
 (deftest process-textDocument/completion-message--invoked-trigger
@@ -163,7 +163,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (let ((new-state (lsp-proc:process-input
                      (make-compl-example-textDocument/didOpen-request)
                      (make-lsp-state)
-                     (sender-fun))))
+                     (fake-sender-fun))))
      (meck:new 'completion-util)
      (meck:expect 'completion-util 'find-completions-at
                   (lambda (text position trigger-char)
@@ -177,7 +177,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
                (lsp-proc:process-input
                 (make-simple-textDocument/completion-request--invoked-trigger)
                 new-state
-                (sender-fun)))
+                (fake-sender-fun)))
      (meck:unload 'completion-util)
      (is (expected-result-p
           #(reply
@@ -188,7 +188,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (let ((new-state (lsp-proc:process-input
                      (make-compl-example-textDocument/didOpen-request)
                      (make-lsp-state)
-                     (sender-fun))))
+                     (fake-sender-fun))))
      (meck:new 'completion-util)
      (meck:expect 'completion-util 'find-completions-at
                   (lambda (text position trigger-char)
@@ -202,7 +202,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
                (lsp-proc:process-input
                 (make-simple-textDocument/completion-request--trigger-char)
                 new-state
-                (sender-fun)))
+                (fake-sender-fun)))
      (meck:unload 'completion-util)
      (is (expected-result-p
           #(reply
@@ -213,7 +213,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (is-equal (make-lsp-state)
              (lsp-proc:process-input (make-simple-shutdown-request)
                                      (make-lsp-state)
-                                     (sender-fun)))
+                                     (fake-sender-fun)))
    (is (expected-result-p #(reply #"{\"id\":null,\"result\":null}")))))
 
 (deftest process-textDocument/didSave-message
@@ -226,7 +226,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
      (is-equal state
                (lsp-proc:process-input (make-simple-textDocument/didSave-request)
                                        state
-                                       (sender-fun)))
+                                       (fake-sender-fun)))
      (is (expected-result-p #(notify #"{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"diagnostics\":[]}}")))
      (meck:unload 'compile-util))))
 
