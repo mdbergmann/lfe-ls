@@ -159,58 +159,76 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (is (expected-result-p #(noreply #"null")))))
 
 (deftest process-textDocument/completion-message--invoked-trigger
-  (let* ((state (make-lsp-state))
-         (new-state (tcdr (lsp-proc:process-input (make-compl-example-textDocument/didOpen-request)
-                                                  state))))
-    (meck:new 'completion-util)
-    (meck:expect 'completion-util 'find-completions-at (lambda (text position trigger-char)
-                                                         (case trigger-char
-                                                           ('null `(,(make-completion-item
-                                                                      label #"defun"
-                                                                      kind 2
-                                                                      insert-text #"defun")))
-                                                           (_ (error "Not expected trigger-char!")))))
-    (is-equal `#(#(reply
-                   #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2,\"detail\":\"\",\"insertText\":\"defun\"}]}")
-                 ,new-state)
-              (lsp-proc:process-input (make-simple-textDocument/completion-request--invoked-trigger)
-                                      new-state))
-    (meck:unload 'completion-util)))
+  (with-fixture
+   (let ((new-state (lsp-proc:process-input
+                     (make-compl-example-textDocument/didOpen-request)
+                     (make-lsp-state)
+                     (sender-fun))))
+     (meck:new 'completion-util)
+     (meck:expect 'completion-util 'find-completions-at
+                  (lambda (text position trigger-char)
+                    (case trigger-char
+                      ('null `(,(make-completion-item
+                                 label #"defun"
+                                 kind 2
+                                 insert-text #"defun")))
+                      (_ (error "Not expected trigger-char!")))))
+     (is-equal new-state
+               (lsp-proc:process-input
+                (make-simple-textDocument/completion-request--invoked-trigger)
+                new-state
+                (sender-fun)))
+     (meck:unload 'completion-util)
+     (is (expected-result-p
+          #(reply
+            #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2,\"detail\":\"\",\"insertText\":\"defun\"}]}"))))))
 
 (deftest process-textDocument/completion-message--trigger-char
-  (let* ((state (make-lsp-state))
-         (new-state (tcdr (lsp-proc:process-input (make-compl-example-textDocument/didOpen-request)
-                                                  state))))
-    (meck:new 'completion-util)
-    (meck:expect 'completion-util 'find-completions-at (lambda (text position trigger-char)
-                                                         (case trigger-char
-                                                           ('null (error "Not expected trigger-char!"))
-                                                           (#":" `(,(make-completion-item
-                                                                     label #"defun"
-                                                                     kind 2
-                                                                     detail #"foo"))))))
-    (is-equal `#(#(reply
-                   #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2,\"detail\":\"foo\"}]}")
-                 ,new-state)
-              (lsp-proc:process-input (make-simple-textDocument/completion-request--trigger-char)
-                                      new-state))
-    (meck:unload 'completion-util)))
+  (with-fixture
+   (let ((new-state (lsp-proc:process-input
+                     (make-compl-example-textDocument/didOpen-request)
+                     (make-lsp-state)
+                     (sender-fun))))
+     (meck:new 'completion-util)
+     (meck:expect 'completion-util 'find-completions-at
+                  (lambda (text position trigger-char)
+                    (case trigger-char
+                      ('null (error "Not expected trigger-char!"))
+                      (#":" `(,(make-completion-item
+                                label #"defun"
+                                kind 2
+                                detail #"foo"))))))
+     (is-equal new-state
+               (lsp-proc:process-input
+                (make-simple-textDocument/completion-request--trigger-char)
+                new-state
+                (sender-fun)))
+     (meck:unload 'completion-util)
+     (is (expected-result-p
+          #(reply
+            #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2,\"detail\":\"foo\"}]}"))))))
 
 (deftest process-shutdown
-  (is-equal `#(#(reply #"{\"id\":null,\"result\":null}") ,(make-lsp-state))
-            (lsp-proc:process-input (make-simple-shutdown-request)
-                                    (make-lsp-state))))
+  (with-fixture
+   (is-equal (make-lsp-state)
+             (lsp-proc:process-input (make-simple-shutdown-request)
+                                     (make-lsp-state)
+                                     (sender-fun)))
+   (is (expected-result-p #(reply #"{\"id\":null,\"result\":null}")))))
 
 (deftest process-textDocument/didSave-message
-  (let ((state (injected-document-state)))
+  (with-fixture
+   (let ((state (injected-document-state)))
 
-    (meck:new 'compile-util)
-    (meck:expect 'compile-util 'compile-file (lambda (uri) '()))
+     (meck:new 'compile-util)
+     (meck:expect 'compile-util 'compile-file (lambda (uri) '()))
     
-    (is-equal `#(#(notify #"{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"diagnostics\":[]}}") ,state)
-              (lsp-proc:process-input (make-simple-textDocument/didSave-request)
-                                      state))
-    (meck:unload 'compile-util)))
+     (is-equal state
+               (lsp-proc:process-input (make-simple-textDocument/didSave-request)
+                                       state
+                                       (sender-fun)))
+     (is (expected-result-p #(notify #"{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"diagnostics\":[]}}")))
+     (meck:unload 'compile-util))))
 
 (defun make-simple-initialize-request ()
   #"{
