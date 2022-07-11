@@ -5,7 +5,7 @@
 (include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
-(defun process-input (input state resp-sender-fun)
+(defun process-input (input state send-fun)
   "Main interface function.
 Takes string `input' (the request json-rpc payload) and produces
 output, the json-rpc response, as string.
@@ -24,24 +24,23 @@ This function returns a newly computed state for the caller."
                (req-id (case tmp-req-id
                          ('() 'null)
                          (id (tcdr id)))))
-          (%process-method req-id req-method req-params state resp-sender-fun)))
+          (%process-method req-id req-method req-params state send-fun)))
     (catch
       ((tuple type value stacktrace)
        (progn
-         (logger:warning "Error on json operation: ~p, type: ~p, value: ~p"
+         (logger:warning "Error: ~p, type: ~p, value: ~p"
                          `(,stacktrace ,type ,value))
-         (funcall resp-sender-fun
-                  `#(reply ,(ljson:encode
-                             (%make-error-response
-                              'null
-                              (req-parse-error)
-                              #"Error on parsing json!"))))
+         (funcall send-fun `#(reply ,(ljson:encode
+                                      (%make-error-response
+                                       'null
+                                       (req-parse-error)
+                                       #"Error on handling request!"))))
          state)))))
 
-(defun %process-method (id method params state resp-sender-fun)
+(defun %process-method (id method params state send-fun)
   "This function is the main lsp 'method' dispatcher.
 It returns a new state.
-The response, either synchronous or asynchronous as notification is done via `resp-sender-fun`
+The response, either synchronous or asynchronous as notification is done via `pid`
 which requires a `(tuple code response)` tuple where:
 `code`: is `noreply`, `reply` or `notify`.
 `response`: is the LSP JSON response"
@@ -75,7 +74,7 @@ which requires a `(tuple code response)` tuple where:
                                  (concat-binary method #"'!"))))
               ,state)))
     ((tuple (tuple code response) state)
-     (funcall resp-sender-fun `#(,code ,(ljson:encode response)))
+     (funcall send-fun `#(,code ,(ljson:encode response)))
      state)))
 
 ;; method handlers
@@ -140,20 +139,16 @@ which requires a `(tuple code response)` tuple where:
                               (set-document-version version)))))))))
 
 (defun %on-textDocument/didSave-req (id params state)
-  (case params
-    (`(#(#"textDocument" ,text-document))
-     (let ((`#(#"uri" ,uri) (find-tkey #"uri" text-document)))
-       (let* ((state-documents (lsp-state-documents state))
-              (document (map-get state-documents uri))
-              (version (document-version document)))
-         `#(#(notify ,(%make-notification
-                       #"textDocument/publishDiagnostics"
-                       (%make-diagnostic-params
-                        uri version
-                        (compile-util:compile-file uri)))) ,state))))
-    (_
-     (logger:warning "Missing 'textDocument' param!")
-     `#(#(noreply null) ,state))))
+  (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params)))
+    (let ((`#(#"uri" ,uri) (find-tkey #"uri" text-document)))
+      (let* ((state-documents (lsp-state-documents state))
+             (document (map-get state-documents uri))
+             (version (document-version document)))
+        `#(#(notify ,(%make-notification
+                      #"textDocument/publishDiagnostics"
+                      (%make-diagnostic-params
+                       uri version
+                       (compile-util:compile-file uri)))) ,state)))))
 
 (defun %on-textDocument/completion-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))

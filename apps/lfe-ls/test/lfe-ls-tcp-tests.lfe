@@ -1,10 +1,9 @@
 (defmodule lfe-ls-tests
-  (behaviour ltest-unit)
-  (import (from lfe-ls-tcp
-                (concat-binary 2))))
+  (behaviour ltest-unit))
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
+(include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/ls-model.lfe")
 
 (defmacro with-fixture body

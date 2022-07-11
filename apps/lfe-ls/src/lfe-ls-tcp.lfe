@@ -92,7 +92,7 @@ Can be 'call'ed or 'cast'.
 Returns: #(ok new-state)"
   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
   (let* ((req (ls-state-req state))
-         (sock (ls-state-device state))
+         (socket (ls-state-device state))
          (lsp-state (ls-state-lsp-state state))
          (new-req (case (string:prefix msg "Content-Length: ")
                     ('nomatch (%handle-partial-req msg req))
@@ -101,17 +101,16 @@ Returns: #(ok new-state)"
              (let ((complete-req (req-data new-req)))
                (logger:debug "Complete request: ~p" `(,complete-req))
                (logger:notice "Complete request of size: ~p" `(,(byte_size complete-req)))
-               (case (lsp-proc:process-input
-                      complete-req
-                      lsp-state
-                      (lambda (lsp-proc-result)
-                        (logger:debug "lsp output: ~p" `(,lsp-proc-result))
-                        (response-sender:send-response (MODULE) sock lsp-proc-result)
-                        (logger:debug "Response sent!")))
-                 (`#(,response ,new-lsp-state)
-                  (clj:-> state
-                          (set-ls-state-req (make-req)) ; reset
-                          (set-ls-state-lsp-state new-lsp-state)))))
+               (let ((new-state (lsp-proc:process-input
+                                 complete-req
+                                 lsp-state
+                                 (lambda (lsp-proc-result)
+                                   (logger:debug "lsp output: ~p" `(,lsp-proc-result))
+                                   (response-sender:send-response #'lfe-ls-tcp:send/2 socket lsp-proc-result)
+                                   (logger:debug "Response sent!")))))
+                 (clj:-> state
+                         (set-ls-state-req (make-req)) ; reset
+                         (set-ls-state-lsp-state new-state))))
              (set-ls-state-req state new-req)))))
 
 (defun handle_cast
@@ -140,6 +139,7 @@ Returns: #(ok new-state)"
   ((`#(tcp ,socket ,msg) state)
    (let ((`#(,code ,new-state) (%on-tcp-receive msg state)))
      (inet:setopts socket '(#(active once)))
+     (logger:debug "active once...done")
      `#(noreply ,new-state)))
   ((`#(tcp_error ,_socket ,_) state)
    (logger:debug "tcp-error")

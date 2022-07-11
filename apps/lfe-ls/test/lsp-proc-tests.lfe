@@ -31,18 +31,18 @@
 
 (defmacro expected-result-p (expected-result)
   "Probes `receiver` for result."
-  `(utils:assert-cond (lambda ()
-                        (! receiver `#(,(self) get))
-                        (receive
-                          ((tuple 'get-resp lsp-resp)
-                           (cond
-                            ((?= expected-result
-                                 lsp-resp)
-                             'true)
-                            (else 'false)))
-                          (after 500
-                            'false)))
-                      1000))
+  `(assert-cond (lambda ()
+                  (! receiver `#(,(self) get))
+                  (receive
+                    ((tuple 'get-resp lsp-resp)
+                     (cond
+                      ((?= expected-result
+                           lsp-resp)
+                       'true)
+                      (else 'false)))
+                    (after 500
+                      'false)))
+                1000))
 
 (defmacro fake-sender-fun ()
   "lsp-proc will call this lambda.
@@ -327,6 +327,9 @@ textDocument/didChange notify:
 
 textDocument/completion request:
 {\"jsonrpc\":\"2.0\",\"id\":12,\"method\":\"textDocument/completion\",\"params\\\":{\"textDocument\":{\"uri\":\"file:///Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/test/lfe-ls-tests.lfe\"},\"position\":{\"line\":86,\"character\":5},\"context\":{\"triggerKind\":1}}}
+
+textDocument/didSave notify:
+"{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didSave\",\"params\":{\"text\":\"(defmodule...",\"textDocument\":{\"uri\":\"file:///Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/test/lfe-ls-tcp-integ-tests.lfe\"}}}"
 
 shutdown request:
 {\"jsonrpc\":\"2.0\",\"id\":40,\"method\":\"shutdown\",\"params\":null}
