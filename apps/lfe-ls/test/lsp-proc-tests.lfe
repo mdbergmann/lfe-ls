@@ -36,7 +36,7 @@
                   (receive
                     ((tuple 'get-resp lsp-resp)
                      (cond
-                      ((?= expected-result
+                      ((?= ,expected-result
                            lsp-resp)
                        'true)
                       (else 'false)))
@@ -47,8 +47,9 @@
 (defmacro fake-sender-fun ()
   "lsp-proc will call this lambda.
 This one will just push the computed result to our fake-lsp-resp-sender actor"
-  `(lambda (lsp-resp)
-    (! receiver `#(,(self) put ,lsp-resp))))
+  `(let ((me (self)))
+     (lambda (lsp-resp)
+       (! receiver `#(,me put ,lsp-resp)))))
 
 (deftest test-lsp-receiver
   (with-fixture

@@ -37,6 +37,19 @@ This function returns a newly computed state for the caller."
                                        #"Error on handling request!"))))
          state)))))
 
+(defmacro %sync-handle-req-op (resp-op send-fun)
+  `(let ((resp ,resp-op))
+     (case resp
+       ((tuple (tuple code response) _)
+        (funcall send-fun `#(,code ,(ljson:encode response)))))
+     resp))
+
+;; (defun async-handle-resp (resp)
+;;   (case resp
+;;     ((tuple (tuple code response) _)
+;;      (funcall send-fun `#(,code ,(ljson:encode response)))))
+;;   resp)
+
 (defun %process-method (id method params state send-fun)
   "This function is the main lsp 'method' dispatcher.
 It returns a new state.
@@ -47,34 +60,53 @@ which requires a `(tuple code response)` tuple where:
   (logger:info "processing method: ~p" `(,method))
   (case (case method
           (#"initialize"
-           (%on-initialize-req id params state))
+           (%sync-handle-req-op
+            (%on-initialize-req id params state)
+            send-fun))
           (#"initialized"
-           (%on-initialized-req id params state))
+           (%sync-handle-req-op
+            (%on-initialized-req id params state)
+            send-fun))
           (#"textDocument/didOpen"
-           (%on-textDocument/didOpen-req id params state))
+           (%sync-handle-req-op
+            (%on-textDocument/didOpen-req id params state)
+            send-fun))
           (#"textDocument/didClose"
-           (%on-textDocument/didClose-req id params state))
+           (%sync-handle-req-op
+            (%on-textDocument/didClose-req id params state)
+            send-fun))
           (#"textDocument/didChange"
-           (%on-textDocument/didChange-req id params state))
+           (%sync-handle-req-op
+            (%on-textDocument/didChange-req id params state)
+            send-fun))
           (#"textDocument/didSave"
-           (%on-textDocument/didSave-req id params state))
+           (%sync-handle-req-op
+            (%on-textDocument/didSave-req id params state)
+            send-fun))
           (#"textDocument/completion"
-           (%on-textDocument/completion-req id params state))
+           (%sync-handle-req-op
+            (%on-textDocument/completion-req id params state)
+            send-fun))
           (#"shutdown"
-           (%on-shutdown-req id state))
+           (%sync-handle-req-op
+            (%on-shutdown-req id state)
+            send-fun))
           (#"test-success"
-           `#(#(reply
-                ,(%make-result-response id 'true)) ,state))
+           (%sync-handle-req-op
+            `#(#(reply
+                 ,(%make-result-response id 'true)) ,state)
+            send-fun))
           (_
-           `#(#(noreply
-                ,(%make-error-response
-                  id
-                  (req-invalid-request-error)
-                  (concat-binary #"Method not supported: '"
-                                 (concat-binary method #"'!"))))
-              ,state)))
-    ((tuple (tuple code response) state)
-     (funcall send-fun `#(,code ,(ljson:encode response)))
+           (%sync-handle-req-op
+            `#(#(noreply
+                 ,(%make-error-response
+                   id
+                   (req-invalid-request-error)
+                   (concat-binary #"Method not supported: '"
+                                  (concat-binary method #"'!"))))
+               ,state)
+            send-fun)))
+    ((tuple _ state)
      state)))
 
 ;; method handlers
