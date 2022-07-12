@@ -13,8 +13,6 @@
   (logger:set_application_level 'lfe-ls 'all)
   (logger:info "Starting lfe-ls application ...")
   (case (application:get_env 'lfe-ls 'transport)
-    (`#(ok "stdio")
-     (lfe-ls-stdio-sup:start_link))
     (`#(ok "tcp")
      (lfe-ls-tcp-sup:start_link))
     (_
@@ -22,8 +20,6 @@
 
 (defun stop ()
   (case (application:get_env 'lfe-ls 'transport)
-    (`#(ok "stdio")
-     (lfe-ls-stdio-sup:stop))
     (`#(ok "tcp")
      (lfe-ls-tcp-sup:stop))
     (_
