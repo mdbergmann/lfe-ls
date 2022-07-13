@@ -37,18 +37,19 @@ This function returns a newly computed state for the caller."
                                        #"Error on handling request!"))))
          state)))))
 
-(defmacro %sync-handle-req-op (resp-op send-fun)
-  `(let ((resp ,resp-op))
+(defmacro %sync-handle-req-op (req-op send-fun)
+  `(let ((resp ,req-op))
      (case resp
        ((tuple (tuple code response) _)
         (funcall send-fun `#(,code ,(ljson:encode response)))))
      resp))
 
-;; (defun async-handle-resp (resp)
-;;   (case resp
-;;     ((tuple (tuple code response) _)
-;;      (funcall send-fun `#(,code ,(ljson:encode response)))))
-;;   resp)
+(defmacro %async-handle-req-op (req-op send-fun)
+  `(spawn (lambda ()
+            (let ((resp ,req-op))
+              (case resp
+                ((tuple (tuple code response) _)
+                 (funcall ,send-fun `#(,code ,(ljson:encode response)))))))))
 
 (defun %process-method (id method params state send-fun)
   "This function is the main lsp 'method' dispatcher.
@@ -80,9 +81,10 @@ which requires a `(tuple code response)` tuple where:
             (%on-textDocument/didChange-req id params state)
             send-fun))
           (#"textDocument/didSave"
-           (%sync-handle-req-op
+           (%async-handle-req-op
             (%on-textDocument/didSave-req id params state)
-            send-fun))
+            send-fun)
+           `#(unused ,state))
           (#"textDocument/completion"
            (%sync-handle-req-op
             (%on-textDocument/completion-req id params state)
