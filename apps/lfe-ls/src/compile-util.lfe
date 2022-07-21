@@ -1,14 +1,42 @@
 (defmodule compile-util
   (export (compile-file 1)))
 
+(include-lib "apps/lfe-ls/include/lsp-model.lfe")
+
 (defun compile-file (path)
   (let ((comp-result (lfe_comp:file path '(verbose return))))
     (case comp-result
-      ((tuple ok _ _) #(ok ())))))
+      ((tuple 'ok _ _) #(ok ()))
+      ((tuple 'error details _ _) (gen-error-diags details))
+      (_ comp-result))))
 
+(defun gen-error-diags (details)
+  (let ((`(#(error (#(,file ,findings)) ,_)) details))
+    (let ((diags (lists:map (lambda (line)
+                              (gen-diag-entry 'error line))
+                            findings)))
+      `#(ok ,diags))))
+
+(defun gen-diag-entry (severity line)
+  (let ((`#(,line-num ,source ,message) line))
+    (make-diagnostic-item
+     range (line->range line-num)
+     severity (atom->diag-severity severity)
+     source (erlang:atom_to_binary source)
+     message (erlang:list_to_binary
+              (lists:flatten
+               (lfe_io:format1 "~p" `(,message)))))))
 
 #|
 Compiling a file with setting include search path.
+
+#(error
+  (#(error
+     (#("/Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/test/compile-tmpls/error-no-include.lfe"
+        (#(1 lfe_lint #(undefined_function #(my-fun 1))))))
+     ()))
+  () ())
+
 
 (lfe_comp:file "/Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/src/completion-util.lfe"
 lfe>                     '(verbose return #(i "/Users/mbergmann/Development/MySources/lfe-ls")))

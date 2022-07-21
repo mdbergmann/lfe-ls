@@ -44,6 +44,11 @@
 (defun diag-severity-info () 3)
 (defun diag-severity-hint () 4)
 
+(defun atom->diag-severity (atom)
+  (case atom
+    ('error 1)
+    (_ 4)))
+
 (defrecord diagnostic-item
   (range)
   (severity)
