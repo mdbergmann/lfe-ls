@@ -31,9 +31,24 @@
   (detail #"" (binary))
   (insert-text #"" (binary)))
 
-;; (defrecord range
-;;   (start (make-position))
-;;   (end (make-position)))
+(defrecord range
+  (start (make-position))
+  (end (make-position)))
+
+(defun line->range (line-num)
+  (make-range start (make-position line line-num)
+              end (make-position line line-num)))
+
+(defun diag-severity-error () 1)
+(defun diag-severity-warn () 2)
+(defun diag-severity-info () 3)
+(defun diag-severity-hint () 4)
+
+(defrecord diagnostic-item
+  (range)
+  (severity)
+  (source #"" (binary))
+  (message #"" (binary)))
 
 ;; (defrecord text-change
 ;;   (range (make-range))

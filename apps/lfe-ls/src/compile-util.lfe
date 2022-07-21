@@ -1,8 +1,10 @@
 (defmodule compile-util
   (export (compile-file 1)))
 
-(defun compile-file (uri)
-  '())
+(defun compile-file (path)
+  (let ((comp-result (lfe_comp:file path '(verbose return))))
+    (case comp-result
+      ((tuple ok _ _) #(ok ())))))
 
 
 #|
@@ -13,7 +15,7 @@ lfe>                     '(verbose return #(i "/Users/mbergmann/Development/MySo
 #(ok
   (#(ok completion-util
      (#("/Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/src/completion-util.lfe"
-        (#(4 is line erl_lint #(unused_function #(1- 1)))
+        (#(4 erl_lint #(unused_function #(1- 1)))
          #(4 erl_lint #(unused_function #(binary-to-string 1)))
          #(4 erl_lint #(unused_function #(concat-binary 2)))
          #(4 erl_lint #(unused_function #(find-tkey 2)))
@@ -29,7 +31,15 @@ lfe>                     '(verbose return #(i "/Users/mbergmann/Development/MySo
          #(5 erl_lint #(unused_record lsp-state)))))))
            I
          is line  
+())
+
+lfe> (lfe_comp:file "/Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/src/lsp-proc.lfe" '(verbose return)) 
+#(error ()
+  (#("/Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/src/lsp-proc.lfe"
+     (#(5 lfe_macro_include
+        #(no_include lib "apps/lfe-ls/include/utils.lfe")))))
   ())
+
 
 TODO:
 - how to determine source and include folders in a project
