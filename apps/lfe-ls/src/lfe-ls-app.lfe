@@ -12,15 +12,15 @@
 (defun start (_type _args)
   (logger:set_application_level 'lfe-ls 'all)
   (logger:info "Starting lfe-ls application ...")
-  (case (application:get_env 'lfe-ls 'transport)
-    (`#(ok "tcp")
+  (case (application:get_env 'lfe-ls 'transport "tcp")
+    ("tcp"
      (lfe-ls-tcp-sup:start_link))
     (_
      (logger:error "Unknown transport!"))))
 
 (defun stop ()
-  (case (application:get_env 'lfe-ls 'transport)
-    (`#(ok "tcp")
+  (case (application:get_env 'lfe-ls 'transport "tcp")
+    ("tcp"
      (lfe-ls-tcp-sup:stop))
     (_
      (logger:error "Unknown transport!"))))
