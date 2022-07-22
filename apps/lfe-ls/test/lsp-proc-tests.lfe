@@ -222,13 +222,14 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (let ((state (injected-document-state)))
 
      (meck:new 'compile-util)
-     (meck:expect 'compile-util 'compile-file (lambda (uri) '()))
+     (meck:expect 'compile-util 'compile-file (lambda (file) #(ok (1 2 3))))
     
      (is-equal state
                (lsp-proc:process-input (make-simple-textDocument/didSave-request)
                                        state
                                        (fake-sender-fun)))
      (is (expected-result-p #(notify #"{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"diagnostics\":[]}}")))
+     (is (meck:validate 'compile-util))
      (meck:unload 'compile-util))))
 
 (defun make-simple-initialize-request ()

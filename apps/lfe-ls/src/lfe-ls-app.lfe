@@ -12,6 +12,12 @@
 (defun start (_type _args)
   (logger:set_application_level 'lfe-ls 'all)
   (logger:info "Starting lfe-ls application ...")
+  (case (application:get_env 'lfe-ls 'port)
+    ('undefined
+     (logger:info "Setting port 10567")
+     (application:set_env 'lfe-ls 'port 10567))
+    (_
+     (logger:info "Port already set.")))
   (case (application:get_env 'lfe-ls 'transport "tcp")
     ("tcp"
      (lfe-ls-tcp-sup:start_link))

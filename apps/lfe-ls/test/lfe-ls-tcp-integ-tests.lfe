@@ -7,8 +7,8 @@
 (defmacro with-fixture body
   "This requires a repl with loaded project."
   `(progn
-     ;; (application:set_env 'lfe-ls 'transport "tcp")
-     ;; (application:set_env 'lfe-ls 'port 10567)
+     ;;(application:set_env 'lfe-ls 'transport "tcp")
+     ;;(application:set_env 'lfe-ls 'port 10567)
      ;; (lfe-ls-app:start 'foo 'bar)
      ;; (timer:sleep 1000)
      ,@body
