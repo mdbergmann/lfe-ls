@@ -288,7 +288,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"textDocument/didSave\",
-\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"text\":\"the text\"}}
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"}}
 }")
 
 (defun make-simple-textDocument/completion-request--invoked-trigger ()

@@ -174,15 +174,24 @@ which requires a `(tuple code response)` tuple where:
 
 (defun %on-textDocument/didSave-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params)))
-    (let ((`#(#"uri" ,uri) (find-tkey #"uri" text-document)))
+    (let* ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
+           (file (binary_to_list (map-get (uri_string:parse uri) 'path))))
+      (logger:debug "Compiling file: ~p" `(,file))
       (let* ((state-documents (lsp-state-documents state))
-             (document (map-get state-documents uri))
-             (version (document-version document)))
-        `#(#(notify ,(%make-notification
-                      #"textDocument/publishDiagnostics"
-                      (%make-diagnostic-params
-                       uri version
-                       (compile-util:compile-file uri)))) ,state)))))
+             ;;(document (map-get state-documents uri))
+             ;;(version (document-version document))
+             )
+        (let* ((diagnostics
+                (let ((compile-result (compile-util:compile-file file)))
+                  (logger:debug "Compile-result: ~p" `(,compile-result))
+                  (case compile-result
+                    (`#(ok ,diags) diags)
+                    (_ '(error))))))
+          `#(#(notify ,(%make-notification
+                        #"textDocument/publishDiagnostics"
+                        (%make-diagnostic-params
+                         uri 1
+                         diagnostics))) ,state))))))
 
 (defun %on-textDocument/completion-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
@@ -252,4 +261,21 @@ which requires a `(tuple code response)` tuple where:
   "Diagnostics are a list diagnostic records."
   `(#(#"uri" ,uri)
     #(#"version" ,version)
-    #(#"diagnostics" ())))
+    #(#"diagnostics" ,(%make-diagnostic-result diagnostics))))
+
+(defun %make-diagnostic-result (diagnostics)
+  "`diagnostics are a list of * diagnostic-item` records."
+  (lists:map (lambda (ditem)
+               `(#(#"range" ,(%make-range (diagnostic-item-range ditem)))
+                 #(#"severity" ,(diagnostic-item-severity ditem))
+                 #(#"source" ,(diagnostic-item-source ditem))
+                 #(#"message" ,(diagnostic-item-message ditem))))
+             diagnostics))
+
+(defun %make-range (range)
+  `(#(#"start" ,(%make-position (range-start range)))
+    #(#"end" ,(%make-position (range-end range)))))
+
+(defun %make-position (pos)
+  `(#(#"line" ,(position-line pos))
+    #(#"character" ,(position-character pos))))

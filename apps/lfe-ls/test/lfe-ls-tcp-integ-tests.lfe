@@ -1,5 +1,6 @@
 (defmodule lsp-ls-integ-tests
-  (behaviour ltest-unit))
+  (behaviour ltest-unit)
+  (export (make-simple-textDocument/didSave-request 1)))
 
 (include-lib "ltest/include/ltest-macros.lfe")
 (include-lib "apps/lfe-ls/include/utils.lfe")
@@ -28,11 +29,21 @@
 (deftest process-completion-message
   (with-fixture
    (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
-     (logger:notice "sending completion...")
      (gen_tcp:send socket (make-simple-textDocument/completion-request))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
        (is (> (string:length response) 0)))
      (gen_tcp:close socket))))
+
+(deftest process-didSave-message
+  (with-fixture
+   (let* ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false))))
+          (`#(ok ,cwd) (file:get_cwd))
+          (file (++ cwd "/compile-tmpls/error-no-include.lfe")))
+     (gen_tcp:send socket (make-simple-textDocument/didSave-request file))
+     (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
+       (is-not-equal 'nomatch (string:find response "\"method\":\"textDocument/publishDiagnostics\""))
+       (is-not-equal 'nomatch (string:find response "\"diagnostics\":[{\"range\":{\"start\":{\"line\":1,\"character\":0},\"end\":{\"line\":1,\"character\":0}},\"severity\":1,\"source\":\"lfe_lint\",\"message\":\"#(undefined_function #(my-fun 1))\"}]"))
+       (gen_tcp:close socket)))))
 
 ;; (deftest process-completion-message
 ;;   (with-fixture
@@ -67,6 +78,18 @@
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":1}}
 }")
 
+(defun make-simple-textDocument/didSave-request (file)
+  (let* ((content (lfe_io:format1 "{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/didSave\",
+\"params\":{\"textDocument\":{\"uri\":\"file://~s\"}}
+}" `(,file)))
+         (content-len (string:length content))
+         (full-content (list_to_binary
+                        (lfe_io:format1 "Content-Length: ~p\r\n\r\n~s"
+                                        `(,content-len ,content)))))
+    full-content))
 
 #|
 {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"processId\":null,\"rootPath\":\"/Users/mbergmann/Development/MySources/lfe-ls/\",\"rootUri\":\"file:///Users/mbergmann/Development/MySources/lfe-ls\",\"initializationOptions\":{},
