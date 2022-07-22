@@ -16,7 +16,7 @@
                'ok
                (list
                 (make-diagnostic-item
-                 range (line->range 1)
+                 range (line-to-range 1)
                  severity (diag-severity-error)
                  source #"lfe_lint"
                  message #"#(undefined_function #(my-fun 1))")))

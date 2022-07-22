@@ -7,21 +7,21 @@
   (let ((comp-result (lfe_comp:file path '(verbose return))))
     (case comp-result
       ((tuple 'ok _ _) #(ok ()))
-      ((tuple 'error details _ _) (gen-error-diags details))
+      ((tuple 'error details _ _) (%gen-error-diags details))
       (_ comp-result))))
 
-(defun gen-error-diags (details)
+(defun %gen-error-diags (details)
   (let ((`(#(error (#(,file ,findings)) ,_)) details))
     (let ((diags (lists:map (lambda (line)
-                              (gen-diag-entry 'error line))
+                              (%gen-diag-entry 'error line))
                             findings)))
       `#(ok ,diags))))
 
-(defun gen-diag-entry (severity line)
+(defun %gen-diag-entry (severity line)
   (let ((`#(,line-num ,source ,message) line))
     (make-diagnostic-item
-     range (line->range line-num)
-     severity (atom->diag-severity severity)
+     range (line-to-range line-num)
+     severity (atom-to-diag-severity severity)
      source (erlang:atom_to_binary source)
      message (erlang:list_to_binary
               (lists:flatten

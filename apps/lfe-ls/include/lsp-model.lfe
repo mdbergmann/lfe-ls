@@ -35,7 +35,7 @@
   (start (make-position))
   (end (make-position)))
 
-(defun line->range (line-num)
+(defun line-to-range (line-num)
   (make-range start (make-position line line-num)
               end (make-position line line-num)))
 
@@ -44,7 +44,7 @@
 (defun diag-severity-info () 3)
 (defun diag-severity-hint () 4)
 
-(defun atom->diag-severity (atom)
+(defun atom-to-diag-severity (atom)
   (case atom
     ('error 1)
     (_ 4)))
