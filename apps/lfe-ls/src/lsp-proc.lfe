@@ -261,9 +261,9 @@ which requires a `(tuple code response)` tuple where:
   "Diagnostics are a list diagnostic records."
   `(#(#"uri" ,uri)
     #(#"version" ,version)
-    #(#"diagnostics" ,(%make-diagnostic-result diagnostics))))
+    #(#"diagnostics" ,(%make-diagnostics-result diagnostics))))
 
-(defun %make-diagnostic-result (diagnostics)
+(defun %make-diagnostics-result (diagnostics)
   "`diagnostics are a list of * diagnostic-item` records."
   (lists:map (lambda (ditem)
                `(#(#"range" ,(%make-range (diagnostic-item-range ditem)))
