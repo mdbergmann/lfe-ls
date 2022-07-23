@@ -35,3 +35,21 @@
                  message #"#(no_include lib \"doesnt-exist.lfe\")")))
               (compile-util:compile-file
                (++ cwd "/compile-tmpls/error-incl-not-exists.lfe")))))
+
+(deftest compile--ok-unused-functions
+  (let ((`#(ok ,cwd) (file:get_cwd)))
+    (is-equal (tuple
+               'ok
+               (list
+                (make-diagnostic-item
+                 range (line-to-range 4)
+                 severity (diag-severity-warn)
+                 source #"erl_lint"
+                 message #"#(unused_function #(foo 1))")
+                (make-diagnostic-item
+                 range (line-to-range 4)
+                 severity (diag-severity-warn)
+                 source #"erl_lint"
+                 message #"#(unused_function #(foo2 0))")))
+              (compile-util:compile-file
+               (++ cwd "/compile-tmpls/ok-incl-unused.lfe")))))

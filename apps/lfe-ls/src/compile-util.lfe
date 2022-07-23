@@ -7,19 +7,31 @@
   "Compiles file at `path` and returns a list of `diagnostic-item`s."
   (let ((comp-result (lfe_comp:file path '(verbose return))))
     (case comp-result
-      ((tuple 'ok _ _)
-       #(ok ()))
-      ((tuple 'error '() file-details _)
-       (%generate-error-diags `(#(error ,file-details ()))))
-      ((tuple 'error details _ _)
-       (%generate-error-diags details))
+      ((tuple 'ok warnings _)
+       (%generate-warn-diags warnings))
+      ((tuple 'error '() errors _)
+       (%generate-error-diags `(#(error ,errors ()))))
+      ((tuple 'error errors _ _)
+       (%generate-error-diags errors))
       (_
        comp-result))))
 
-(defun %generate-error-diags (details)
+(defun %generate-warn-diags (warnings)
+  "as in 3."
+  (logger:debug "parsing diags: ~p" `(,warnings))
+  (case warnings
+    (`(#(ok ,module ()))
+     `#(ok ()))
+    (`(#(ok ,module (#(,file ,findings))))
+     (let ((diags (lists:map (lambda (line)
+                               (%generate-diag-entry 'warn line))
+                             findings)))
+       `#(ok ,diags)))))
+
+(defun %generate-error-diags (errors)
   "as in 1."
-  (logger:debug "parsing diags: ~p" `(,details))
-  (let ((`(#(error (#(,file ,findings)) ,_)) details))
+  (logger:debug "parsing diags: ~p" `(,errors))
+  (let ((`(#(error (#(,file ,findings)) ,_)) errors))
     (let ((diags (lists:map (lambda (line)
                               (%generate-diag-entry 'error line))
                             findings)))
@@ -53,6 +65,7 @@ Compiling a file with setting include search path.
      (#(3 lfe_macro_include #(no_include lib "doesnt-exist.lfe")))))
   ())
 
+3.
 (lfe_comp:file "/Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/src/completion-util.lfe"
 lfe>                     '(verbose return #(i "/Users/mbergmann/Development/MySources/lfe-ls")))
 #(ok

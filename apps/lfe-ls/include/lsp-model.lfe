@@ -47,6 +47,7 @@
 (defun atom-to-diag-severity (atom)
   (case atom
     ('error 1)
+    ('warn 2)
     (_ 4)))
 
 (defrecord diagnostic-item
