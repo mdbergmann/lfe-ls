@@ -6,7 +6,8 @@
 
 LFE language server written in LFE.
 
-This is largely work in progress. The following LSP functionality is implemented:
+I started this project because I wanted to try LFE in a real project and LFE has a bit of a lack of tooling.  
+It is largely work in progress. The following LSP functionality is implemented:
 
 - `initialize` request/response
 - `initialized` notification
@@ -15,11 +16,11 @@ This is largely work in progress. The following LSP functionality is implemented
 - `textDocument/didClose` notification which deletes the document in memory.
 - `textDocument/didSave` notification
 - `textDocument/completion` request/response implements global symbols and loaded modules as well as module functions.
+- `textDocument/publishDiagnostics` notification to push compile diagnostics on saving a file.
 
 Planned further support is:
 
 - hover support for showing documentation (via eldoc in Eglot).
-- sending compiler diagnostics back to the LSP client.
 
 Auto-completion is rudimentary right now. It completes global symbols/atoms, functions/macros and functions on a module basis by parsing the text and looking for ':' character which indicates completing for a module.
 There is a lot of room for improvement. I.e.: functions within a module could be parsed from the text, or variables within a let.
