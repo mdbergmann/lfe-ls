@@ -16,7 +16,7 @@
                'ok
                (list
                 (make-diagnostic-item
-                 range (line-to-range 1)
+                 range (line-to-range 0)
                  severity (diag-severity-error)
                  source #"lfe_lint"
                  message #"#(undefined_function #(my-fun 1))")))
@@ -29,7 +29,7 @@
                'ok
                (list
                 (make-diagnostic-item
-                 range (line-to-range 3)
+                 range (line-to-range 2)
                  severity (diag-severity-error)
                  source #"lfe_macro_include"
                  message #"#(no_include lib \"doesnt-exist.lfe\")")))
@@ -42,12 +42,12 @@
                'ok
                (list
                 (make-diagnostic-item
-                 range (line-to-range 4)
+                 range (line-to-range 3)
                  severity (diag-severity-warn)
                  source #"erl_lint"
                  message #"#(unused_function #(foo 1))")
                 (make-diagnostic-item
-                 range (line-to-range 4)
+                 range (line-to-range 3)
                  severity (diag-severity-warn)
                  source #"erl_lint"
                  message #"#(unused_function #(foo2 0))")))

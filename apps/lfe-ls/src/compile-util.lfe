@@ -41,7 +41,7 @@
   "Handles a compile finding entry."
   (let ((`#(,line-num ,source ,message) line))
     (make-diagnostic-item
-     range (line-to-range line-num)
+     range (line-to-range (- line-num 1))
      severity (atom-to-diag-severity severity)
      source (erlang:atom_to_binary source)
      message (erlang:list_to_binary
