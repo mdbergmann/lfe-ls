@@ -220,9 +220,8 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 (deftest process-textDocument/didSave-message
   (with-fixture
    (let ((state (injected-document-state)))
-
      (meck:new 'compile-util)
-     (meck:expect 'compile-util 'compile-file (lambda (file) #(ok (1 2 3))))
+     (meck:expect 'compile-util 'compile-file (lambda (file) #(ok ())))
     
      (is-equal state
                (lsp-proc:process-input (make-simple-textDocument/didSave-request)
