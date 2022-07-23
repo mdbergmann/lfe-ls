@@ -4,13 +4,21 @@
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 (defun compile-file (path)
+  "Compiles file at `path` and returns a list of `diagnostic-item`s."
   (let ((comp-result (lfe_comp:file path '(verbose return))))
     (case comp-result
-      ((tuple 'ok _ _) #(ok ()))
-      ((tuple 'error details _ _) (%generate-error-diags details))
-      (_ comp-result))))
+      ((tuple 'ok _ _)
+       #(ok ()))
+      ((tuple 'error '() file-details _)
+       (%generate-error-diags `(#(error ,file-details ()))))
+      ((tuple 'error details _ _)
+       (%generate-error-diags details))
+      (_
+       comp-result))))
 
 (defun %generate-error-diags (details)
+  "as in 1."
+  (logger:debug "parsing diags: ~p" `(,details))
   (let ((`(#(error (#(,file ,findings)) ,_)) details))
     (let ((diags (lists:map (lambda (line)
                               (%generate-diag-entry 'error line))
@@ -18,6 +26,7 @@
       `#(ok ,diags))))
 
 (defun %generate-diag-entry (severity line)
+  "Handles a compile finding entry."
   (let ((`#(,line-num ,source ,message) line))
     (make-diagnostic-item
      range (line-to-range line-num)
@@ -30,6 +39,7 @@
 #|
 Compiling a file with setting include search path.
 
+1. undefined function export
 #(error
   (#(error
      (#("/Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/test/compile-tmpls/error-no-include.lfe"
@@ -37,6 +47,11 @@ Compiling a file with setting include search path.
      ()))
   () ())
 
+2. include doesn't exist
+#(error ()
+  (#("/Users/mbergmann/Development/MySources/lfe-ls/compile-tmpls/error-incl-not-exists.lfe"
+     (#(3 lfe_macro_include #(no_include lib "doesnt-exist.lfe")))))
+  ())
 
 (lfe_comp:file "/Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/src/completion-util.lfe"
 lfe>                     '(verbose return #(i "/Users/mbergmann/Development/MySources/lfe-ls")))
@@ -60,14 +75,6 @@ lfe>                     '(verbose return #(i "/Users/mbergmann/Development/MySo
            I
          is line  
 ())
-
-lfe> (lfe_comp:file "/Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/src/lsp-proc.lfe" '(verbose return)) 
-#(error ()
-  (#("/Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/src/lsp-proc.lfe"
-     (#(5 lfe_macro_include
-        #(no_include lib "apps/lfe-ls/include/utils.lfe")))))
-  ())
-
 
 TODO:
 - how to determine source and include folders in a project

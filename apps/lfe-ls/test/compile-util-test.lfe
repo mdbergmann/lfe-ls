@@ -22,3 +22,16 @@
                  message #"#(undefined_function #(my-fun 1))")))
               (compile-util:compile-file
                (++ cwd "/compile-tmpls/error-no-include.lfe")))))
+
+(deftest compile--error--include-doesnt-exist
+  (let ((`#(ok ,cwd) (file:get_cwd)))
+    (is-equal (tuple
+               'ok
+               (list
+                (make-diagnostic-item
+                 range (line-to-range 3)
+                 severity (diag-severity-error)
+                 source #"lfe_macro_include"
+                 message #"#(no_include lib \"doesnt-exist.lfe\")")))
+              (compile-util:compile-file
+               (++ cwd "/compile-tmpls/error-incl-not-exists.lfe")))))
