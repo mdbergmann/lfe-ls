@@ -23,7 +23,7 @@
   "Parses the global symbol or function name, or the module if a ':' is part of the play.
 Returns a list of one, or two entries.
 One entry if there is no ':' in the text that was parsed.
-Two entries if there was a ':' in the text that was parsed. The second element is empty if there is no text after the ':'. So generally the first element denotes a glopbal symbol or function if only one element in the returned list. If two elements the first element is a module and the second element is either empty, or denotes a function in the module."
+Two entries if there was a ':' in the text that was parsed. The second element is empty if there is no text after the ':'. So generally the first element denotes a global symbol or function if only one element in the returned list. If two elements the first element is a module and the second element is either empty, or denotes a function in the module."
   (let* ((line-pos (position-line position))
          (char-pos (position-character position))
          (lines (string:split text #"\n" 'all))

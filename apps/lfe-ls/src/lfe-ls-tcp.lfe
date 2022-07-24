@@ -105,7 +105,7 @@ Returns: #(ok new-state)"
                                  complete-req
                                  lsp-state
                                  (lambda (lsp-proc-result)
-                                   (logger:debug "lsp output: ~p" `(,lsp-proc-result))
+                                   ;;(logger:debug "lsp output: ~p" `(,lsp-proc-result))
                                    (response-sender:send-response #'lfe-ls-tcp:send/2 socket lsp-proc-result)
                                    (logger:debug "Response sent!")))))
                  (clj:-> state

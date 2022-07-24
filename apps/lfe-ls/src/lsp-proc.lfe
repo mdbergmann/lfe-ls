@@ -238,14 +238,7 @@ which requires a `(tuple code response)` tuple where:
 (defun %make-completion-result (completions)
   "`completions' is a list of `completion-item' records."
   (lists:map (lambda (citem)
-               (let ((insert-text (completion-item-insert-text citem)))
-                 (lists:append
-                  `(#(#"label" ,(completion-item-label citem))
-                    #(#"kind" ,(completion-item-kind citem))
-                    #(#"detail" ,(completion-item-detail citem)))
-                  (if (> (byte_size insert-text) 0)
-                    `(#(#"insertText" ,insert-text))
-                    '()))))
+               (%completion-item-to-json citem))
              completions))
 
 (defun %make-notification (method params)
@@ -262,16 +255,30 @@ which requires a `(tuple code response)` tuple where:
 (defun %make-diagnostics-result (diagnostics)
   "`diagnostics are a list of * diagnostic-item` records."
   (lists:map (lambda (ditem)
-               `(#(#"range" ,(%make-range (diagnostic-item-range ditem)))
-                 #(#"severity" ,(diagnostic-item-severity ditem))
-                 #(#"source" ,(diagnostic-item-source ditem))
-                 #(#"message" ,(diagnostic-item-message ditem))))
+               (%diagnostic-item-to-json ditem))
              diagnostics))
 
-(defun %make-range (range)
-  `(#(#"start" ,(%make-position (range-start range)))
-    #(#"end" ,(%make-position (range-end range)))))
+(defun %completion-item-to-json (citem)
+  (let ((insert-text (completion-item-insert-text citem)))
+    (lists:append
+     `(#(#"label" ,(completion-item-label citem))
+       #(#"kind" ,(completion-item-kind citem))
+       #(#"detail" ,(completion-item-detail citem))
+       #(#"insertTextFormat" 1))
+     (if (> (byte_size insert-text) 0)
+       `(#(#"insertText" ,insert-text))
+       '()))))
 
-(defun %make-position (pos)
+(defun %diagnostic-item-to-json (ditem)
+  `(#(#"range" ,(%range-to-json (diagnostic-item-range ditem)))
+    #(#"severity" ,(diagnostic-item-severity ditem))
+    #(#"source" ,(diagnostic-item-source ditem))
+    #(#"message" ,(diagnostic-item-message ditem))))
+
+(defun %range-to-json (range)
+  `(#(#"start" ,(%position-to-json (range-start range)))
+    #(#"end" ,(%position-to-json (range-end range)))))
+
+(defun %position-to-json (pos)
   `(#(#"line" ,(position-line pos))
     #(#"character" ,(position-character pos))))

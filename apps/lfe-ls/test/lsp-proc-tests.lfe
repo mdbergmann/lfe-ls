@@ -334,4 +334,91 @@ textDocument/didSave notify:
 
 shutdown request:
 {\"jsonrpc\":\"2.0\",\"id\":40,\"method\":\"shutdown\",\"params\":null}
+
+
+
+Erlang_ls:
+[server-reply] (id:1) Sun Jul 24 11:51:42 2022:
+(:id 1 :jsonrpc "2.0" :result
+     (:capabilities
+      (:callHierarchyProvider t :codeActionProvider t :codeLensProvider
+                              (:resolveProvider :json-false)
+                              :completionProvider
+                              (:resolveProvider t :triggerCharacters
+                                                [":" "#" "?" "." "-" "\""]))))
+
+lf-ls:
+[server-reply] (id:1) Sun Jul 24 12:06:52 2022:
+(:id 1 :result
+     (:capabilities
+      (:completionProvider
+       (:resolveProvider t :triggerCharacters
+                         ["(" ":" "'"])
+       :textDocumentSync
+       (:openClose t :change 1))
+      :serverInfo
+      (:name "lfe-ls")))
+
+Erlang_ls:
+[client-request] (id:23) Sun Jul 24 11:56:34 2022:
+(:jsonrpc "2.0" :id 23 :method "textDocument/completion" :params
+          (:textDocument
+           (:uri "file:///Users/mbergmann/Development/MySources/Erlang/firstapp/src/firstapp_sup.erl")
+           :position
+           (:line 16 :character 15)
+           :context
+           (:triggerKind 2 :triggerCharacter ":")))
+
+lfe-ls:
+[client-request] (id:2) Sun Jul 24 12:09:08 2022:
+(:jsonrpc "2.0" :id 2 :method "textDocument/completion" :params
+          (:textDocument
+           (:uri "file:///Users/mbergmann/Development/MySources/lfe-ls/apps/lfe-ls/src/lfe-ls-tcp-sup.lfe")
+           :position
+           (:line 35 :character 10)
+           :context
+           (:triggerKind 2 :triggerCharacter ":")))
+
+Erlang_ls:
+[server-reply] (id:23) Sun Jul 24 11:56:34 2022:
+(:id 23 :jsonrpc "2.0" :result
+     [(:data
+       (:arity 1 :function "check_childspecs" :module "supervisor")
+       :insertText "check_childspecs(${1:ChildSpecs})" :insertTextFormat 2 :kind 3 :label "check_childspecs/1")
+      (:data
+       (:arity 1 :function "count_children" :module "supervisor")
+       :insertText "count_children(${1:Supervisor})" :insertTextFormat 2 :kind 3 :label "count_children/1")
+      (:data
+       (:arity 1 :function "format_log" :module "supervisor")
+       :insertText "format_log(${1:LogReport})" :insertTextFormat 2 :kind 3 :label "format_log/1")
+      (:data
+       (:arity 1 :function "get_callback_module" :module "supervisor")
+       :insertText "get_callback_module(${1:Pid})" :insertTextFormat 2 :kind 3 :label "get_callback_module/1")]
+)
+
+lfe-ls:
+[server-reply] (id:2) Sun Jul 24 12:09:08 2022:
+(:id 2 :result
+     [(:label "binary_to_atom/1" :kind 3 :detail "erlang:" :insertText "binary_to_atom")
+      (:label "binary_to_existing_atom/1" :kind 3 :detail "erlang:" :insertText "binary_to_existing_atom")
+      (:label "check_process_code/2" :kind 3 :detail "erlang:" :insertText "check_process_code")
+      (:label "check_process_code/3" :kind 3 :detail "erlang:" :insertText "check_process_code")
+      (:label "alias/0" :kind 3 :detail "erlang:" :insertText "alias")
+      ])
+
+[client-request] (id:24) Sun Jul 24 11:56:34 2022:
+(:jsonrpc "2.0" :id 24 :method "completionItem/resolve" :params
+          (:data
+           (:arity 1 :function "check_childspecs" :module "supervisor")
+           :insertText "check_childspecs(${1:ChildSpecs})" :insertTextFormat 2 :kind 3 :label
+           #("check_childspecs/1" 0 1
+             (eglot--lsp-item #1))))
+[server-reply] (id:24) Sun Jul 24 11:56:34 2022:
+(:id 24 :jsonrpc "2.0" :result
+     (:documentation
+      (:kind "markdown" :value "```erlang\ncheck_childspecs(ChildSpecs) -> Result\nwhen\n  ChildSpecs :: [child_spec()],\n  Result :: ok | {error, Error :: term()}.\n```\n\n---\n*Since:* OTP 24\\.0\n\nTakes a list of child specification as argument and returns `ok` if all of them are syntactically correct, otherwise `{error,Error}`\\.\n\nIf the optional `AutoShutdown` argument is given and not `undefined`, also checks if the child specifications are allowed for the given [auto\\_shutdown](https://erlang.org/doc/man/supervisor.html#auto_shutdown) option\\.\n")
+      :data
+      (:arity 1 :function "check_childspecs" :module "supervisor")
+      :insertText "check_childspecs(${1:ChildSpecs})" :insertTextFormat 2 :kind 3 :label "check_childspecs/1"))
+
 |#
