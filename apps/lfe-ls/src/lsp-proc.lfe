@@ -177,21 +177,17 @@ which requires a `(tuple code response)` tuple where:
     (let* ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
            (file (binary_to_list (map-get (uri_string:parse uri) 'path))))
       (logger:debug "Compiling file: ~p" `(,file))
-      (let* ((state-documents (lsp-state-documents state))
-             ;;(document (map-get state-documents uri))
-             ;;(version (document-version document))
-             )
-        (let* ((diagnostics
-                (let ((compile-result (compile-util:compile-file file)))
-                  (logger:debug "Compile-result: ~p" `(,compile-result))
-                  (case compile-result
-                    (`#(ok ,diags) diags)
-                    (_ '(error))))))
-          `#(#(notify ,(%make-notification
-                        #"textDocument/publishDiagnostics"
-                        (%make-diagnostic-params
-                         uri 1
-                         diagnostics))) ,state))))))
+      (let* ((diagnostics
+              (let ((compile-result (compile-util:compile-file file)))
+                (logger:debug "Compile-result: ~p" `(,compile-result))
+                (case compile-result
+                  (`#(ok ,diags) diags)
+                  (_ '(error))))))
+        `#(#(notify ,(%make-notification
+                      #"textDocument/publishDiagnostics"
+                      (%make-diagnostic-params
+                       uri 1
+                       diagnostics))) ,state)))))
 
 (defun %on-textDocument/completion-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
@@ -234,7 +230,7 @@ which requires a `(tuple code response)` tuple where:
 (defun %make-capabilities ()
   "Text sync is full document."
   #(#"capabilities" (#(#"completionProvider"
-                       (#(#"resolveProvider" true)
+                       (#(#"resolveProvider" false)
                         #(#"triggerCharacters" (#"(" #":" #"'"))))
                      #(#"textDocumentSync"
                        (#(#"openClose" true) #(#"change" 1))))))
