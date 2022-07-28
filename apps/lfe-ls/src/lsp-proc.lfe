@@ -37,16 +37,16 @@ This function returns a newly computed state for the caller."
                                        #"Error on handling request!"))))
          state)))))
 
-(defmacro %sync-handle-req-op (req-op send-fun)
+(defmacro %handle-req-op (req-op send-fun)
   `(let ((resp ,req-op))
      (case resp
        ((tuple (tuple code response) _)
         (funcall send-fun `#(,code ,(ljson:encode response)))))
      resp))
 
-(defmacro %async-handle-req-op (req-op send-fun)
+(defmacro %send-async (resp-op send-fun)
   `(spawn (lambda ()
-            (let ((resp ,req-op))
+            (let ((resp ,resp-op))
               (case resp
                 ((tuple (tuple code response) _)
                  (funcall ,send-fun `#(,code ,(ljson:encode response)))))))))
@@ -61,45 +61,44 @@ which requires a `(tuple code response)` tuple where:
   (logger:info "processing method: ~p" `(,method))
   (case (case method
           (#"initialize"
-           (%sync-handle-req-op
+           (%handle-req-op
             (%on-initialize-req id params state)
             send-fun))
           (#"initialized"
-           (%sync-handle-req-op
+           (%handle-req-op
             (%on-initialized-req id params state)
             send-fun))
           (#"textDocument/didOpen"
-           (%sync-handle-req-op
-            (%on-textDocument/didOpen-req id params state)
+           (%handle-req-op
+            (%on-textDocument/didOpen-req id params state send-fun)
             send-fun))
           (#"textDocument/didClose"
-           (%sync-handle-req-op
+           (%handle-req-op
             (%on-textDocument/didClose-req id params state)
             send-fun))
           (#"textDocument/didChange"
-           (%sync-handle-req-op
+           (%handle-req-op
             (%on-textDocument/didChange-req id params state)
             send-fun))
           (#"textDocument/didSave"
-           (%async-handle-req-op
-            (%on-textDocument/didSave-req id params state)
-            send-fun)
-           `#(unused ,state))
+           (%handle-req-op
+            (%on-textDocument/didSave-req id params state send-fun)
+            send-fun))
           (#"textDocument/completion"
-           (%sync-handle-req-op
+           (%handle-req-op
             (%on-textDocument/completion-req id params state)
             send-fun))
           (#"shutdown"
-           (%sync-handle-req-op
+           (%handle-req-op
             (%on-shutdown-req id state)
             send-fun))
           (#"test-success"
-           (%sync-handle-req-op
+           (%handle-req-op
             `#(#(reply
                  ,(%make-result-response id 'true)) ,state)
             send-fun))
           (_
-           (%sync-handle-req-op
+           (%handle-req-op
             `#(#(noreply
                  ,(%make-error-response
                    id
@@ -120,21 +119,25 @@ which requires a `(tuple code response)` tuple where:
 (defun %on-initialized-req (id params state)
   `#(#(noreply null) ,state))
 
-(defun %on-textDocument/didOpen-req (id params state)
+(defun %on-textDocument/didOpen-req (id params state send-fun)
   (let ((state-documents (lsp-state-documents state)))
     (case params
       (`(#(#"textDocument" ,text-document))
        (let* ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
               (`#(#"version" ,version) (find-tkey #"version" text-document))
               (`#(#"text" ,text) (find-tkey #"text" text-document))
-              (file (binary_to_list (map-get (uri_string:parse uri) 'path))))
-         (%compile-file-to-notify file
-                                  uri
-                                  (set-lsp-state-documents
-                                   state
-                                   (map-set state-documents
-                                            uri
-                                            (make-document uri uri version version text text))))))
+              (file (binary_to_list (map-get (uri_string:parse uri) 'path)))
+              (new-state (set-lsp-state-documents
+                          state
+                          (map-set state-documents
+                                   uri
+                                   (make-document uri uri version version text text)))))
+         (%send-async 
+          (%compile-file-to-notify file
+                                   uri
+                                   new-state)
+          send-fun)
+         `#(#(noreply null) ,new-state)))
       (_
        (logger:warning "Missing 'textDocument' param!")
        `#(#(noreply null) ,state)))))
@@ -174,11 +177,14 @@ which requires a `(tuple code response)` tuple where:
                               (set-document-text new-text)
                               (set-document-version version)))))))))
 
-(defun %on-textDocument/didSave-req (id params state)
+(defun %on-textDocument/didSave-req (id params state send-fun)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params)))
     (let* ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
            (file (binary_to_list (map-get (uri_string:parse uri) 'path))))
-      (%compile-file-to-notify file uri state))))
+      (%send-async
+       (%compile-file-to-notify file uri state)
+       send-fun)
+      `#(#(noreply null) ,state))))
 
 (defun %compile-file-to-notify (file uri state)
   (logger:debug "Compiling file: ~p" `(,file))
