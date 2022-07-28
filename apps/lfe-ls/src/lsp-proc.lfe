@@ -124,15 +124,17 @@ which requires a `(tuple code response)` tuple where:
   (let ((state-documents (lsp-state-documents state)))
     (case params
       (`(#(#"textDocument" ,text-document))
-       (let ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
-             (`#(#"version" ,version) (find-tkey #"version" text-document))
-             (`#(#"text" ,text) (find-tkey #"text" text-document)))
-         `#(#(noreply null)
-            ,(set-lsp-state-documents
-              state
-              (map-set state-documents
-                       uri
-                       (make-document uri uri version version text text))))))
+       (let* ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
+              (`#(#"version" ,version) (find-tkey #"version" text-document))
+              (`#(#"text" ,text) (find-tkey #"text" text-document))
+              (file (binary_to_list (map-get (uri_string:parse uri) 'path))))
+         (%compile-file-to-notify file
+                                  uri
+                                  (set-lsp-state-documents
+                                   state
+                                   (map-set state-documents
+                                            uri
+                                            (make-document uri uri version version text text))))))
       (_
        (logger:warning "Missing 'textDocument' param!")
        `#(#(noreply null) ,state)))))
@@ -176,18 +178,20 @@ which requires a `(tuple code response)` tuple where:
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params)))
     (let* ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
            (file (binary_to_list (map-get (uri_string:parse uri) 'path))))
-      (logger:debug "Compiling file: ~p" `(,file))
-      (let* ((diagnostics
-              (let ((compile-result (compile-util:compile-file file)))
-                (logger:debug "Compile-result: ~p" `(,compile-result))
-                (case compile-result
-                  (`#(ok ,diags) diags)
-                  (_ '(error))))))
-        `#(#(notify ,(%make-notification
-                      #"textDocument/publishDiagnostics"
-                      (%make-diagnostic-params
-                       uri 1
-                       diagnostics))) ,state)))))
+      (%compile-file-to-notify file uri state))))
+
+(defun %compile-file-to-notify (file uri state)
+  (logger:debug "Compiling file: ~p" `(,file))
+  (let ((diagnostics
+         (let ((compile-result (compile-util:compile-file file)))
+           (logger:debug "Compile-result: ~p" `(,compile-result))
+           (case compile-result
+             (`#(ok ,diags) diags)
+             (_ '(error))))))
+    `#(#(notify ,(%make-notification
+                  #"textDocument/publishDiagnostics"
+                  (%make-diagnostic-params
+                   uri 1 diagnostics))) ,state)))
 
 (defun %on-textDocument/completion-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
@@ -214,7 +218,9 @@ which requires a `(tuple code response)` tuple where:
 (defun %on-shutdown-req (id state)
   `#(#(reply ,(%make-result-response id 'null)) ,state))
 
+;; --------------------------------------------------
 ;; response factories
+;; --------------------------------------------------
 
 (defun %make-result-response (id result)
   `(#(#"id" ,id) #(#"result" ,result)))
@@ -235,16 +241,27 @@ which requires a `(tuple code response)` tuple where:
                      #(#"textDocumentSync"
                        (#(#"openClose" true) #(#"change" 1))))))
 
+(defun %make-notification (method params)
+  `(#(#"jsonrpc" #"2.0")
+    #(#"method" ,method)
+    #(#"params" ,params)))
+
 (defun %make-completion-result (completions)
   "`completions' is a list of `completion-item' records."
   (lists:map (lambda (citem)
                (%completion-item-to-json citem))
              completions))
 
-(defun %make-notification (method params)
-  `(#(#"jsonrpc" #"2.0")
-    #(#"method" ,method)
-    #(#"params" ,params)))
+(defun %completion-item-to-json (citem)
+  (let ((insert-text (completion-item-insert-text citem)))
+    (lists:append
+     `(#(#"label" ,(completion-item-label citem))
+       #(#"kind" ,(completion-item-kind citem))
+       #(#"detail" ,(completion-item-detail citem)))
+     (if (> (byte_size insert-text) 0)
+       `(#(#"insertTextFormat" 1)
+         #(#"insertText" ,insert-text))
+       '()))))
 
 (defun %make-diagnostic-params (uri version diagnostics)
   "Diagnostics are a list diagnostic records."
@@ -253,21 +270,10 @@ which requires a `(tuple code response)` tuple where:
     #(#"diagnostics" ,(%make-diagnostics-result diagnostics))))
 
 (defun %make-diagnostics-result (diagnostics)
-  "`diagnostics are a list of * diagnostic-item` records."
+  "`diagnostics` are a list of `diagnostic-item` records."
   (lists:map (lambda (ditem)
                (%diagnostic-item-to-json ditem))
              diagnostics))
-
-(defun %completion-item-to-json (citem)
-  (let ((insert-text (completion-item-insert-text citem)))
-    (lists:append
-     `(#(#"label" ,(completion-item-label citem))
-       #(#"kind" ,(completion-item-kind citem))
-       #(#"detail" ,(completion-item-detail citem))
-       #(#"insertTextFormat" 1))
-     (if (> (byte_size insert-text) 0)
-       `(#(#"insertText" ,insert-text))
-       '()))))
 
 (defun %diagnostic-item-to-json (ditem)
   `(#(#"range" ,(%range-to-json (diagnostic-item-range ditem)))
