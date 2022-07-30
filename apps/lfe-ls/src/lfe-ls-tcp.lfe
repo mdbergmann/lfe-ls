@@ -65,53 +65,42 @@
 
 (defun double-nl () #"\r\n\r\n")
 
-(defun %request-complete-p (req)
-  (== (req-expected-len req) (req-current-len req)))
-
-(defun %handle-new-req (msg req)
+(defun %handle-new-req (msg socket)
   (logger:debug "handle-new-req...")
-  (case (binary:split msg (double-nl))
-    (`(,len ,rest)
-     (let* ((len-and-nl (binary (len binary)
-                                ((double-nl) binary)))
-            (proper-rest (string:prefix msg
-                                        len-and-nl)))
-       (make-req expected-len (erlang:binary_to_integer len)
-                 current-len (byte_size proper-rest)
-                 data proper-rest)))))
-
-(defun %handle-partial-req (msg req)
-  (logger:debug "handle-partial-req...")
-  (clj:-> req
-          (set-req-current-len (+ (req-current-len req) (byte_size msg)))
-          (set-req-data (concat-binary (req-data req) msg))))
+  (logger:debug "msg: ~p" `(,msg))
+  (let* (((list len rest) (binary:split msg (double-nl)))
+         (len-int (erlang:binary_to_integer len))
+         (rest-len (byte_size rest))
+         (len-diff (- len-int rest-len)))
+    (logger:debug "New req content-len: ~p" `(,len-int))
+    (logger:debug "rest-len: ~p, len-diff: ~p" `(,rest-len ,len-diff))
+    (if (> len-diff 0)
+      (let ((complete-req (binary (rest binary) ((recv socket len-diff) binary))))
+        (logger:debug "complete-req: ~p" `(,complete-req))
+        complete-req)
+      rest)))
 
 (defun %on-tcp-receive (msg state)
   "Handles data recived via tcp.
 Can be 'call'ed or 'cast'.
 Returns: #(ok new-state)"
   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
-  (let* ((req (ls-state-req state))
-         (socket (ls-state-device state))
+  (let* ((socket (ls-state-device state))
          (lsp-state (ls-state-lsp-state state))
          (new-req (case (string:prefix msg "Content-Length: ")
-                    ('nomatch (%handle-partial-req msg req))
-                    (rest-msg (%handle-new-req rest-msg req)))))
-    `#(ok ,(if (%request-complete-p new-req)
-             (let ((complete-req (req-data new-req)))
-               (logger:debug "Complete request: ~p" `(,complete-req))
-               (logger:notice "Complete request of size: ~p" `(,(byte_size complete-req)))
-               (let ((new-state (lsp-proc:process-input
-                                 complete-req
-                                 lsp-state
-                                 (lambda (lsp-proc-result)
-                                   ;;(logger:debug "lsp output: ~p" `(,lsp-proc-result))
-                                   (response-sender:send-response #'lfe-ls-tcp:send/2 socket lsp-proc-result)
-                                   (logger:debug "Response sent!")))))
-                 (clj:-> state
-                         (set-ls-state-req (make-req)) ; reset
-                         (set-ls-state-lsp-state new-state))))
-             (set-ls-state-req state new-req)))))
+                    (rest-msg (%handle-new-req rest-msg socket)))))
+    ;;(logger:debug "Complete request: ~p" `(,complete-req))
+    (logger:notice "Complete request of size: ~p" `(,(byte_size new-req)))
+    (let ((new-state (lsp-proc:process-input
+                               new-req
+                               lsp-state
+                               (lambda (lsp-proc-result)
+                                 ;;(logger:debug "lsp output: ~p" `(,lsp-proc-result))
+                                 (response-sender:send-response #'lfe-ls-tcp:send/2 socket lsp-proc-result)
+                                 (logger:debug "Response sent!")))))
+      `#(ok ,(clj:-> state
+                  (set-ls-state-req (make-req)) ; reset
+                  (set-ls-state-lsp-state new-state))))))
 
 (defun handle_cast
   "'receive is used to simulate TCP receival from a test"
@@ -137,9 +126,9 @@ Returns: #(ok new-state)"
 (defun handle_info
   "LSP requests come in via 'tcp"
   ((`#(tcp ,socket ,msg) state)
+   (inet:setopts socket '(#(active false)))
    (let ((`#(,code ,new-state) (%on-tcp-receive msg state)))
      (inet:setopts socket '(#(active once)))
-     (logger:debug "active once...done")
      `#(noreply ,new-state)))
   ((`#(tcp_error ,_socket ,_) state)
    (logger:debug "tcp-error")
@@ -157,7 +146,14 @@ Returns: #(ok new-state)"
 (defun code_change (_old-version state _extra)
   `#(ok ,state))
 
-;;; our server API
+;;; private functions
+
+(defun recv (socket len)
+  (case (gen_tcp:recv socket len)
+    ((tuple 'ok data)
+     data)
+    ((tuple 'error reason)
+     (gen_server:stop (pid)))))
 
 (defun send (socket msg)
   (gen_tcp:send socket msg))

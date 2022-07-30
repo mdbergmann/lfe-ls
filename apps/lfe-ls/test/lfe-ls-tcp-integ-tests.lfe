@@ -46,19 +46,19 @@
        (is-not-equal 'nomatch (string:find response "\"diagnostics\":[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":0}},\"severity\":1,\"source\":\"lfe_lint\",\"message\":\"#(undefined_function #(my-fun 1))\"}]"))
        (gen_tcp:close socket)))))
 
-;; (deftest process-completion-message
-;;   (with-fixture
-;;    (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
-;;      (logger:notice "initializing...")
-;;      (gen_tcp:send socket (make-simple-initialize-request))
-;;      (gen_tcp:recv socket 0)
-;;      (logger:notice "sending didOpen...")
-;;      (gen_tcp:send socket (make-simple-textDocument/didOpen-request))
-;;      (logger:notice "sending completion...")
-;;      (gen_tcp:send socket (make-simple-textDocument/completion-request))
-;;      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
-;;        (is (> (string:length response) 0)))
-;;      (gen_tcp:close socket))))
+(deftest process-completion-message-2
+  (with-fixture
+   (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
+     (logger:notice "initializing...")
+     (gen_tcp:send socket (make-simple-initialize-request))
+     (gen_tcp:recv socket 0)
+     (logger:notice "sending didOpen...")
+     (gen_tcp:send socket (make-simple-textDocument/didOpen-request))
+     (logger:notice "sending completion...")
+     (gen_tcp:send socket (make-simple-textDocument/completion-request))
+     (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
+       (is (> (string:length response) 0)))
+     (gen_tcp:close socket))))
 
 (defun make-simple-initialize-request ()
   #"Content-Length: 181\r\n\r\n{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"initialize\",\"params\":{\"processId\":null,\"clientInfo\":{\"name\":\"eglot\"},\"rootPath\":null,\"rootUri\":null,\"initializationOptions\":{},\"capabilities\":{}}}")

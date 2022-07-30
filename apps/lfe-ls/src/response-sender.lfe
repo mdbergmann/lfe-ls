@@ -8,8 +8,8 @@
 `response`: is a tuple of the 'type of' response (atom: reply, noreply, notify) and the json response itself."
   (logger:debug "Sending response via: ~p" `(,send-fun))
   (case response
-    (`#(reply ,lsp-proc-output)
-     (funcall send-fun device (%build-full-response lsp-proc-output)))
+    (`#(reply ,lsp-message)
+     (funcall send-fun device (%build-full-response lsp-message)))
     (`#(noreply ,_)
      'ok)
     (`#(notify ,lsp-message)

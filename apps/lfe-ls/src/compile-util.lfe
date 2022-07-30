@@ -20,8 +20,9 @@
   "as in 3."
   (logger:debug "parsing diags: ~p" `(,warnings))
   (case warnings
+    ('() #(ok ()))
     (`(#(ok ,module ()))
-     `#(ok ()))
+     #(ok ())) 
     (`(#(ok ,module (#(,file ,findings))))
      (let ((diags (lists:map (lambda (line)
                                (%generate-diag-entry 'warn line))
