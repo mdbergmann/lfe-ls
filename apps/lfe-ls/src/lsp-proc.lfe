@@ -37,89 +37,73 @@ This function returns a newly computed state for the caller."
                                        #"Error on handling request!"))))
          state)))))
 
-(defmacro %handle-req-op (req-op send-fun)
-  `(let ((resp ,req-op))
-     (case resp
-       ((tuple (tuple code response) _)
-        (funcall send-fun `#(,code ,(ljson:encode response)))))
-     resp))
-
-(defmacro %send-async (resp-op send-fun)
+(defmacro %send-async (notify-fun send-fun)
   `(spawn (lambda ()
-            (let ((resp ,resp-op))
+            (let ((resp (funcall ,notify-fun)))
               (case resp
-                ((tuple (tuple code response) _)
+                ((tuple code response)
                  (funcall ,send-fun `#(,code ,(ljson:encode response)))))))))
 
 (defun %process-method (id method params state send-fun)
   "This function is the main lsp 'method' dispatcher.
 It returns a new state.
-The response, either synchronous or asynchronous as notification is done via `pid`
-which requires a `(tuple code response)` tuple where:
-`code`: is `noreply`, `reply` or `notify`.
-`response`: is the LSP JSON response"
+
+Handler functions (like `%on-initialize-req`) should return:
+`(tuple (tuple code response) state contiuation)` where:
+`code`: is `noreply`, `reply`.
+`response`: is the LSP JSON response
+`state` is the new state
+`continuation` is either 'null or a lambda that should return a notification in the form of
+`(tuple 'notify response)`. It is sent asynchronous back to the client."
   (logger:info "processing method: ~p" `(,method))
   (case (case method
           (#"initialize"
-           (%handle-req-op
-            (%on-initialize-req id params state)
-            send-fun))
+           (%on-initialize-req id params state))
           (#"initialized"
-           (%handle-req-op
-            (%on-initialized-req id params state)
-            send-fun))
+           (%on-initialized-req id params state))
           (#"textDocument/didOpen"
-           (%handle-req-op
-            (%on-textDocument/didOpen-req id params state send-fun)
-            send-fun))
+           (%on-textDocument/didOpen-req id params state))
           (#"textDocument/didClose"
-           (%handle-req-op
-            (%on-textDocument/didClose-req id params state)
-            send-fun))
+           (%on-textDocument/didClose-req id params state))
           (#"textDocument/didChange"
-           (%handle-req-op
-            (%on-textDocument/didChange-req id params state)
-            send-fun))
+           (%on-textDocument/didChange-req id params state))
           (#"textDocument/didSave"
-           (%handle-req-op
-            (%on-textDocument/didSave-req id params state send-fun)
-            send-fun))
+           (%on-textDocument/didSave-req id params state))
           (#"textDocument/completion"
-           (%handle-req-op
-            (%on-textDocument/completion-req id params state)
-            send-fun))
+           (%on-textDocument/completion-req id params state))
           (#"shutdown"
-           (%handle-req-op
-            (%on-shutdown-req id state)
-            send-fun))
+           (%on-shutdown-req id state))
           (#"test-success"
-           (%handle-req-op
-            `#(#(reply
-                 ,(%make-result-response id 'true)) ,state)
-            send-fun))
+           `#(#(reply
+                ,(%make-result-response id 'true))
+              ,state
+              null))
           (_
-           (%handle-req-op
-            `#(#(noreply
-                 ,(%make-error-response
-                   id
-                   (req-invalid-request-error)
-                   (concat-binary #"Method not supported: '"
-                                  (concat-binary method #"'!"))))
-               ,state)
-            send-fun)))
-    ((tuple _ state)
+           `#(#(noreply
+                ,(%make-error-response
+                  id
+                  (req-invalid-request-error)
+                  (concat-binary #"Method not supported: '"
+                                 (concat-binary method #"'!"))))
+              ,state
+              null)))
+    ((tuple (tuple code response) state cont)
+     (funcall send-fun `#(,code ,(ljson:encode response)))
+     (clj:when-not (== cont 'null)
+          (%send-async cont send-fun))
      state)))
 
 ;; method handlers
 
 (defun %on-initialize-req (id params state)
   `#(#(reply ,(%make-result-response id (%make-initialize-result params)))
-     ,(set-lsp-state-initialized state 'true)))
+     ,(set-lsp-state-initialized state 'true)
+     null))
 
 (defun %on-initialized-req (id params state)
-  `#(#(noreply null) ,state))
+  `#(#(noreply null) ,state null))
 
-(defun %on-textDocument/didOpen-req (id params state send-fun)
+(defun %on-textDocument/didOpen-req (id params state)
   (let ((state-documents (lsp-state-documents state)))
     (case params
       (`(#(#"textDocument" ,text-document))
@@ -132,15 +116,13 @@ which requires a `(tuple code response)` tuple where:
                           (map-set state-documents
                                    uri
                                    (make-document uri uri version version text text)))))
-         (%send-async 
-          (%compile-file-to-notify file
-                                   uri
-                                   new-state)
-          send-fun)
-         `#(#(noreply null) ,new-state)))
+         `#(#(noreply null)
+            ,new-state
+            ,(lambda ()
+               (%compile-file-to-notify file uri)))))
       (_
        (logger:warning "Missing 'textDocument' param!")
-       `#(#(noreply null) ,state)))))
+       `#(#(noreply null) ,state null)))))
 
 (defun %on-textDocument/didClose-req (id params state)
   (let ((state-documents (lsp-state-documents state)))
@@ -150,10 +132,11 @@ which requires a `(tuple code response)` tuple where:
          `#(#(noreply null)
             ,(set-lsp-state-documents
               state
-              (map-remove state-documents uri)))))
+              (map-remove state-documents uri))
+            null)))
       (_
        (logger:warning "Missing 'textDocument' param!")
-       `#(#(noreply null) ,state)))))
+       `#(#(noreply null) ,state null)))))
 
 (defun %on-textDocument/didChange-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
@@ -175,18 +158,19 @@ which requires a `(tuple code response)` tuple where:
                       uri
                       (clj:-> document
                               (set-document-text new-text)
-                              (set-document-version version)))))))))
+                              (set-document-version version))))
+           null)))))
 
-(defun %on-textDocument/didSave-req (id params state send-fun)
+(defun %on-textDocument/didSave-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params)))
     (let* ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
            (file (binary_to_list (map-get (uri_string:parse uri) 'path))))
-      (%send-async
-       (%compile-file-to-notify file uri state)
-       send-fun)
-      `#(#(noreply null) ,state))))
+      `#(#(noreply null)
+         ,state
+         ,(lambda ()
+            (%compile-file-to-notify file uri))))))
 
-(defun %compile-file-to-notify (file uri state)
+(defun %compile-file-to-notify (file uri)
   (logger:debug "Compiling file: ~p" `(,file))
   (let ((diagnostics
          (let ((compile-result (compile-util:compile-file file)))
@@ -194,10 +178,10 @@ which requires a `(tuple code response)` tuple where:
            (case compile-result
              (`#(ok ,diags) diags)
              (_ '(error))))))
-    `#(#(notify ,(%make-notification
-                  #"textDocument/publishDiagnostics"
-                  (%make-diagnostic-params
-                   uri 1 diagnostics))) ,state)))
+    `#(notify ,(%make-notification
+                #"textDocument/publishDiagnostics"
+                (%make-diagnostic-params
+                 uri 1 diagnostics)))))
 
 (defun %on-textDocument/completion-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
@@ -219,10 +203,11 @@ which requires a `(tuple code response)` tuple where:
                        (case trigger-char
                          ('() 'null)
                          (else (tcdr else)))))))
-           ,state)))))
+           ,state
+           null)))))
 
 (defun %on-shutdown-req (id state)
-  `#(#(reply ,(%make-result-response id 'null)) ,state))
+  `#(#(reply ,(%make-result-response id 'null)) ,state null))
 
 ;; --------------------------------------------------
 ;; response factories
