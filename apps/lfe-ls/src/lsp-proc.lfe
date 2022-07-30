@@ -54,42 +54,42 @@ Handler functions (like `%on-initialize-req`) are expected to return:
 `continuation-function` is either 'null or a lambda that should return a notification in the form of
 `(tuple 'notify response)`. It is sent asynchronous back to the client."
   (logger:info "processing method: ~p" `(,method))
-  (case (case method
-          (#"initialize"
-           (%on-initialize-req id params state))
-          (#"initialized"
-           (%on-initialized-req id params state))
-          (#"textDocument/didOpen"
-           (%on-textDocument/didOpen-req id params state))
-          (#"textDocument/didClose"
-           (%on-textDocument/didClose-req id params state))
-          (#"textDocument/didChange"
-           (%on-textDocument/didChange-req id params state))
-          (#"textDocument/didSave"
-           (%on-textDocument/didSave-req id params state))
-          (#"textDocument/completion"
-           (%on-textDocument/completion-req id params state))
-          (#"shutdown"
-           (%on-shutdown-req id state))
-          (#"test-success"
-           `#(#(reply
-                ,(%make-result-response id 'true))
-              ,state
-              null))
-          (_
-           `#(#(noreply
-                ,(%make-error-response
-                  id
-                  (req-invalid-request-error)
-                  (concat-binary #"Method not supported: '"
-                                 (concat-binary method #"'!"))))
-              ,state
-              null)))
-    ((tuple (tuple code response) state cont)
-     (funcall send-fun `#(,code ,(ljson:encode response)))
-     (clj:when-not (== cont 'null)
-          (%send-async cont send-fun))
-     state)))
+  (let (((tuple (tuple code response) state cont)
+         (case method
+           (#"initialize"
+            (%on-initialize-req id params state))
+           (#"initialized"
+            (%on-initialized-req id params state))
+           (#"textDocument/didOpen"
+            (%on-textDocument/didOpen-req id params state))
+           (#"textDocument/didClose"
+            (%on-textDocument/didClose-req id params state))
+           (#"textDocument/didChange"
+            (%on-textDocument/didChange-req id params state))
+           (#"textDocument/didSave"
+            (%on-textDocument/didSave-req id params state))
+           (#"textDocument/completion"
+            (%on-textDocument/completion-req id params state))
+           (#"shutdown"
+            (%on-shutdown-req id state))
+           (#"test-success"
+            `#(#(reply
+                 ,(%make-result-response id 'true))
+               ,state
+               null))
+           (_
+            `#(#(noreply
+                 ,(%make-error-response
+                   id
+                   (req-invalid-request-error)
+                   (concat-binary #"Method not supported: '"
+                                  (concat-binary method #"'!"))))
+               ,state
+               null)))))
+    (funcall send-fun `#(,code ,(ljson:encode response)))
+    (clj:when-not (== cont 'null)
+         (%send-async cont send-fun))
+    state))
 
 ;; method handlers
 
