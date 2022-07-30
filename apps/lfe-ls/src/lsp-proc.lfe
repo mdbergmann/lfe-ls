@@ -48,12 +48,12 @@ This function returns a newly computed state for the caller."
   "This function is the main lsp 'method' dispatcher.
 It returns a new state.
 
-Handler functions (like `%on-initialize-req`) should return:
-`(tuple (tuple code response) state contiuation)` where:
+Handler functions (like `%on-initialize-req`) are expected to return:
+`(tuple (tuple code response) state continuation-function)` where:
 `code`: is `noreply`, `reply`.
 `response`: is the LSP JSON response
 `state` is the new state
-`continuation` is either 'null or a lambda that should return a notification in the form of
+`continuation-function` is either 'null or a lambda that should return a notification in the form of
 `(tuple 'notify response)`. It is sent asynchronous back to the client."
   (logger:info "processing method: ~p" `(,method))
   (case (case method

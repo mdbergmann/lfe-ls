@@ -41,7 +41,7 @@
           (file (++ cwd "/compile-tmpls/error-no-include.lfe")))
      (gen_tcp:send socket (make-simple-textDocument/didSave-request file))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
-       (logger:notice "response: ~p" `(,response))
+       ;;(logger:notice "response: ~p" `(,response))
        (is-not-equal 'nomatch (string:find response "\"method\":\"textDocument/publishDiagnostics\""))
        (is-not-equal 'nomatch (string:find response "\"diagnostics\":[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":0}},\"severity\":1,\"source\":\"lfe_lint\",\"message\":\"#(undefined_function #(my-fun 1))\"}]"))
        (gen_tcp:close socket)))))
