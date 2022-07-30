@@ -39,10 +39,8 @@ This function returns a newly computed state for the caller."
 
 (defmacro %send-async (notify-fun send-fun)
   `(spawn (lambda ()
-            (let ((resp (funcall ,notify-fun)))
-              (case resp
-                ((tuple code response)
-                 (funcall ,send-fun `#(,code ,(ljson:encode response)))))))))
+            (let (((tuple code response) (funcall ,notify-fun)))
+              (funcall ,send-fun `#(,code ,(ljson:encode response)))))))
 
 (defun %process-method (id method params state send-fun)
   "This function is the main lsp 'method' dispatcher.
