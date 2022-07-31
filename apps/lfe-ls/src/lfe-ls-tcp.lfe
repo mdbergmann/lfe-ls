@@ -85,19 +85,25 @@
 Can be 'call'ed or 'cast'.
 Returns: #(ok new-state)"
   (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
-  (let* ((socket (ls-state-device state))
-         (lsp-state (ls-state-lsp-state state))
-         (new-req (case (string:prefix msg "Content-Length: ")
-                    (rest-msg (%handle-new-req rest-msg socket)))))
-    ;;(logger:debug "Complete request: ~p" `(,complete-req))
-    (logger:notice "Complete request of size: ~p" `(,(byte_size new-req)))
-    (let ((new-state (lsp-proc:process-input
-                               new-req
-                               lsp-state
-                               (lambda (lsp-proc-result)
-                                 ;;(logger:debug "lsp output: ~p" `(,lsp-proc-result))
-                                 (response-sender:send-response #'lfe-ls-tcp:send/2 socket lsp-proc-result)
-                                 (logger:debug "Response sent!")))))
+  (let ((socket (ls-state-device state))
+        (lsp-state (ls-state-lsp-state state))
+        (reqs (lists:filter (lambda (x)
+                              (> (byte_size x) 0))
+                     (binary:split msg #"Content-Length: " '(global)))))
+    (logger:debug "Have ~p requests" `(,(length reqs)))
+    (let ((new-state
+           (lists:foldl (lambda (req state)
+                          (let ((complete-req (%handle-new-req req socket)))
+                            ;;(logger:debug "Complete request: ~p" `(,complete-req))
+                            (logger:info "Complete request of size: ~p" `(,(byte_size complete-req)))
+                            (lsp-proc:process-input
+                                      complete-req
+                                      state
+                                      (lambda (lsp-proc-result)
+                                        ;;(logger:debug "lsp output: ~p" `(,lsp-proc-result))
+                                        (response-sender:send-response #'lfe-ls-tcp:send/2 socket lsp-proc-result)
+                                        (logger:debug "Response sent!")))))
+                  lsp-state reqs)))
       `#(ok ,(clj:-> state
                   (set-ls-state-req (make-req)) ; reset
                   (set-ls-state-lsp-state new-state))))))
@@ -126,7 +132,6 @@ Returns: #(ok new-state)"
 (defun handle_info
   "LSP requests come in via 'tcp"
   ((`#(tcp ,socket ,msg) state)
-   (inet:setopts socket '(#(active false)))
    (let ((`#(,code ,new-state) (%on-tcp-receive msg state)))
      (inet:setopts socket '(#(active once)))
      `#(noreply ,new-state)))

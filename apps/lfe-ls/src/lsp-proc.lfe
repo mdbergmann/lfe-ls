@@ -117,7 +117,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
          `#(#(noreply null)
             ,new-state
             ,(lambda ()
-               (%compile-file-to-notify file uri)))))
+               (%compile-file-to-notify file uri version)))))
       (_
        (logger:warning "Missing 'textDocument' param!")
        `#(#(noreply null) ,state null)))))
@@ -163,12 +163,15 @@ Handler functions (like `%on-initialize-req`) are expected to return:
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params)))
     (let* ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
            (file (binary_to_list (map-get (uri_string:parse uri) 'path))))
-      `#(#(noreply null)
-         ,state
-         ,(lambda ()
-            (%compile-file-to-notify file uri))))))
+      (let* ((state-documents (lsp-state-documents state))
+             (document (map-get state-documents uri))
+             (version (document-version document)))
+        `#(#(noreply null)
+           ,state
+           ,(lambda ()
+              (%compile-file-to-notify file uri version)))))))
 
-(defun %compile-file-to-notify (file uri)
+(defun %compile-file-to-notify (file uri version)
   (logger:debug "Compiling file: ~p" `(,file))
   (let ((diagnostics
          (let ((compile-result (compile-util:compile-file file)))
@@ -179,7 +182,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
     `#(notify ,(%make-notification
                 #"textDocument/publishDiagnostics"
                 (%make-diagnostic-params
-                 uri 1 diagnostics)))))
+                 uri version diagnostics)))))
 
 (defun %on-textDocument/completion-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))

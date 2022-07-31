@@ -39,6 +39,7 @@
    (let* ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false))))
           (`#(ok ,cwd) (file:get_cwd))
           (file (++ cwd "/compile-tmpls/error-no-include.lfe")))
+     (gen_tcp:send socket (make-simple-textDocument/didOpen-request file))
      (gen_tcp:send socket (make-simple-textDocument/didSave-request file))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
        ;;(logger:notice "response: ~p" `(,response))
@@ -49,12 +50,9 @@
 (deftest process-completion-message-2
   (with-fixture
    (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
-     (logger:notice "initializing...")
      (gen_tcp:send socket (make-simple-initialize-request))
      (gen_tcp:recv socket 0)
-     (logger:notice "sending didOpen...")
-     (gen_tcp:send socket (make-simple-textDocument/didOpen-request))
-     (logger:notice "sending completion...")
+     (gen_tcp:send socket (make-simple-textDocument/didOpen-request "/foobar.lfe"))
      (gen_tcp:send socket (make-simple-textDocument/completion-request))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
        (is (> (string:length response) 0)))
@@ -63,13 +61,18 @@
 (defun make-simple-initialize-request ()
   #"Content-Length: 181\r\n\r\n{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"initialize\",\"params\":{\"processId\":null,\"clientInfo\":{\"name\":\"eglot\"},\"rootPath\":null,\"rootUri\":null,\"initializationOptions\":{},\"capabilities\":{}}}")
 
-(defun make-simple-textDocument/didOpen-request ()
-  #"Content-Length: 175\r\n\r\n{
+(defun make-simple-textDocument/didOpen-request (file)
+  (let* ((content (lfe_io:format1 "{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"textDocument/didOpen\",
-\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\",\"version\":1,\"languageId\":\"lfe\",\"text\":\"the-document-text\"}}
-}")
+\"params\":{\"textDocument\":{\"uri\":\"file://~s\",\"version\":1,\"languageId\":\"lfe\",\"text\":\"the-document-text\"}}
+}" `(,file)))
+         (content-len (string:length content))
+         (full-content (list_to_binary
+                        (lfe_io:format1 "Content-Length: ~p\r\n\r\n~s"
+                                        `(,content-len ,content)))))
+    full-content))
 
 (defun make-simple-textDocument/completion-request ()
   #"Content-Length: 184\r\n\r\n{

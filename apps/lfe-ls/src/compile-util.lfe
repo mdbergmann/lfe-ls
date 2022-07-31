@@ -90,6 +90,9 @@ lfe>                     '(verbose return #(i "/Users/mbergmann/Development/MySo
          is line  
 ())
 
+4. (TODO)
+[{error,[{"/foobar.lfe",[{none,file,enoent}]}],[]}]
+
 TODO:
 - how to determine source and include folders in a project
 
