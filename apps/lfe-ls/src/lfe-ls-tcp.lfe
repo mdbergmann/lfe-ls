@@ -15,7 +15,8 @@
   ;; server API
   (export
    (send 2)
-   (pid 0)))
+   (pid 0)
+   (read-request 1)))
 
 (include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/ls-model.lfe")
@@ -58,12 +59,48 @@
   (logger:debug "waiting for connection...")
   (let ((`#(ok ,accept-socket)
          (gen_tcp:accept (ls-state-device state))))
-    (inet:setopts accept-socket '(#(active once)))
+    (inet:setopts accept-socket '(#(active false)))
     (logger:notice "connection accepted (lfe-ls)")
     (lfe-ls-tcp-sup:start-socket)
-    `#(noreply ,(set-ls-state-device state accept-socket))))
+    (let ((new-state (set-ls-state-device state accept-socket)))
+      (let ((reader-pid (spawn_link (MODULE) 'read-request `(,new-state))))
+        (logger:debug "Spawned reader: ~p" `(,reader-pid))
+        `#(noreply ,reader-pid)))))
 
 (defun double-nl () #"\r\n\r\n")
+
+(defun header-len ()
+  "Byte size of the initial message header. 7 is for the number of digits of the length."
+  (+ 7 (byte_size (binary (#"Content-Length: " binary) ((double-nl) binary)))))
+
+(defun read-request (state)
+  (logger:debug "Reading request...")
+  (let ((socket (ls-state-device state)))
+    (let ((header-data (recv socket (header-len))))
+      (let (((tuple 'ok new-state) (%on-tcp-receive header-data state)))
+        (read-request new-state)))))
+
+(defun %on-tcp-receive (partial-msg state)
+  "Handles data recived via tcp.
+Can be 'call'ed or 'cast'.
+Returns: #(ok state)"
+  (logger:debug "Received partial-msg len: ~p" `(,(byte_size partial-msg)))
+  (let ((socket (ls-state-device state))
+        (lsp-state (ls-state-lsp-state state))
+        (req (string:prefix partial-msg #"Content-Length: ")))
+    (let ((new-lsp-state
+           (let ((complete-req (%handle-new-req req socket)))
+             ;;(logger:debug "Complete request: ~p" `(,complete-req))
+             (logger:info "Complete request of size: ~p" `(,(byte_size complete-req)))
+             (lsp-proc:process-input
+                       complete-req
+                       lsp-state
+                       (lambda (lsp-proc-result)
+                         ;;(logger:debug "lsp output: ~p" `(,lsp-proc-result))
+                         (response-sender:send-response #'lfe-ls-tcp:send/2 socket lsp-proc-result)
+                         (logger:debug "Response sent!"))))))
+      `#(ok ,(clj:-> state
+                  (set-ls-state-lsp-state new-lsp-state))))))
 
 (defun %handle-new-req (msg socket)
   (logger:debug "handle-new-req...")
@@ -79,34 +116,6 @@
         (logger:debug "complete-req: ~p" `(,complete-req))
         complete-req)
       rest)))
-
-(defun %on-tcp-receive (msg state)
-  "Handles data recived via tcp.
-Can be 'call'ed or 'cast'.
-Returns: #(ok new-state)"
-  (logger:debug "Received msg len: ~p" `(,(byte_size msg)))
-  (let ((socket (ls-state-device state))
-        (lsp-state (ls-state-lsp-state state))
-        (reqs (lists:filter (lambda (x)
-                              (> (byte_size x) 0))
-                     (binary:split msg #"Content-Length: " '(global)))))
-    (logger:debug "Have ~p requests" `(,(length reqs)))
-    (let ((new-state
-           (lists:foldl (lambda (req state)
-                          (let ((complete-req (%handle-new-req req socket)))
-                            ;;(logger:debug "Complete request: ~p" `(,complete-req))
-                            (logger:info "Complete request of size: ~p" `(,(byte_size complete-req)))
-                            (lsp-proc:process-input
-                                      complete-req
-                                      state
-                                      (lambda (lsp-proc-result)
-                                        ;;(logger:debug "lsp output: ~p" `(,lsp-proc-result))
-                                        (response-sender:send-response #'lfe-ls-tcp:send/2 socket lsp-proc-result)
-                                        (logger:debug "Response sent!")))))
-                  lsp-state reqs)))
-      `#(ok ,(clj:-> state
-                  (set-ls-state-req (make-req)) ; reset
-                  (set-ls-state-lsp-state new-state))))))
 
 (defun handle_cast
   "'receive is used to simulate TCP receival from a test"
@@ -130,17 +139,6 @@ Returns: #(ok new-state)"
    `#(reply #(error "Unknown command.") ,state)))
 
 (defun handle_info
-  "LSP requests come in via 'tcp"
-  ((`#(tcp ,socket ,msg) state)
-   (let ((`#(,code ,new-state) (%on-tcp-receive msg state)))
-     (inet:setopts socket '(#(active once)))
-     `#(noreply ,new-state)))
-  ((`#(tcp_error ,_socket ,_) state)
-   (logger:debug "tcp-error")
-   `#(stop normal ,state))
-  ((`#(tcp_closed ,_socket) state)
-   (logger:debug "tcp-closed")
-   `#(stop normal ,state))
   ((e state)
    (logger:warning "unexpected: ~p" `(,e))
    `#(noreply ,state)))
