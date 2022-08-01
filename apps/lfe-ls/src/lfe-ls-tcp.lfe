@@ -79,7 +79,7 @@
     (let ((header-data (recv socket (header-len))))
       (case header-data
         ('closed
-         (logger:info "Not the content we expected. Bailing out."))
+         (logger:info "Socket closed!"))
         (else
          (let (((tuple 'ok new-state) (%on-tcp-receive header-data state)))
           (read-request new-state)))))))
