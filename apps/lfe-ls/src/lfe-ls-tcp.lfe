@@ -77,8 +77,12 @@
   (logger:debug "Reading request...")
   (let ((socket (ls-state-device state)))
     (let ((header-data (recv socket (header-len))))
-      (let (((tuple 'ok new-state) (%on-tcp-receive header-data state)))
-        (read-request new-state)))))
+      (case header-data
+        ('ok
+         (logger:info "Not the content we expected. Bailing out."))
+        (else
+         (let (((tuple 'ok new-state) (%on-tcp-receive header-data state)))
+          (read-request new-state)))))))
 
 (defun %on-tcp-receive (partial-msg state)
   "Handles data recived via tcp.
