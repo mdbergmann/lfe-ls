@@ -78,7 +78,7 @@
   (let ((socket (ls-state-device state)))
     (let ((header-data (recv socket (header-len))))
       (case header-data
-        ('ok
+        ('closed
          (logger:info "Not the content we expected. Bailing out."))
         (else
          (let (((tuple 'ok new-state) (%on-tcp-receive header-data state)))
@@ -160,7 +160,8 @@ Returns: #(ok state)"
     ((tuple 'ok data)
      data)
     ((tuple 'error reason)
-     (gen_server:stop (pid)))))
+     (gen_server:stop (pid))
+     'closed)))
 
 (defun send (socket msg)
   (gen_tcp:send socket msg))
