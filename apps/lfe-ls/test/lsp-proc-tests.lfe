@@ -101,12 +101,12 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (let ((initialized-lsp-state (lsp-proc:process-input (make-simple-initialize-request)
                                           (make-lsp-state)
                                           (fake-sender-fun))))
-     (is-equal (make-lsp-state initialized 'true rootpath #"/tmp/foo")
+     (is-equal (make-lsp-state initialized 'true rootpath "/tmp/foo")
                initialized-lsp-state)
      (is (expected-result-p
           #(reply
             #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")))
-     (is-equal #"/tmp/foo" (lsp-state-rootpath initialized-lsp-state)))))
+     (is-equal "/tmp/foo" (lsp-state-rootpath initialized-lsp-state)))))
 
 (deftest process-initialized-message
   (with-fixture
@@ -119,9 +119,9 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 (deftest process-textDocument/didOpen-message
   (with-fixture
    (meck:new 'compile-util)
-   (meck:expect 'compile-util 'compile-file (lambda (file) #(ok ())))
+   (meck:expect 'compile-util 'compile-file (lambda (_ _) #(ok ())))
 
-   (is-equal #(lsp-state false #"" #M(#"file:///foobar.lfe"
+   (is-equal #(lsp-state false "" #M(#"file:///foobar.lfe"
                                       #(document #"file:///foobar.lfe" 1 #"the-document-text")))
              (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
                                      (make-lsp-state)
@@ -133,9 +133,9 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 (deftest process-textDocument/didOpen-message--second-doc
   (with-fixture
    (meck:new 'compile-util)
-   (meck:expect 'compile-util 'compile-file (lambda (file) #(ok ())))
+   (meck:expect 'compile-util 'compile-file (lambda (_ _) #(ok ())))
 
-   (is-equal #(lsp-state false #"" #M(#"file:///foobar.lfe"
+   (is-equal #(lsp-state false "" #M(#"file:///foobar.lfe"
                                       #(document #"file:///foobar.lfe" 1 #"the-document-text")
                                       #"file:///foobar2.lfe"
                                       #(document #"file:///foobar2.lfe" 2 #"the-document-text2")))
@@ -157,7 +157,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 
 (deftest process-textDocument/didChange-message
   (with-fixture
-   (is-equal #(lsp-state false #"" #M(#"file:///foobar.lfe"
+   (is-equal #(lsp-state false "" #M(#"file:///foobar.lfe"
                                       #(document #"file:///foobar.lfe" 2 #"thedocument-text")))
              (lsp-proc:process-input (make-simple-textDocument/didChange-request)
                                      (injected-document-state)
@@ -166,7 +166,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 
 (deftest process-textDocument/didClose-message
   (with-fixture
-   (is-equal #(lsp-state false #"" #M())
+   (is-equal #(lsp-state false "" #M())
              (lsp-proc:process-input (make-simple-textDocument/didClose-request)
                                      (injected-document-state)
                                      (fake-sender-fun)))
@@ -176,7 +176,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
   (with-fixture
    (let ((state (injected-document-state)))
      (meck:new 'compile-util)
-     (meck:expect 'compile-util 'compile-file (lambda (file) #(ok ())))
+     (meck:expect 'compile-util 'compile-file (lambda (_ _) #(ok ())))
     
      (is-equal state
                (lsp-proc:process-input (make-simple-textDocument/didSave-request)
@@ -189,7 +189,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 (deftest process-textDocument/completion-message--invoked-trigger
   (with-fixture
    (meck:new 'compile-util)
-   (meck:expect 'compile-util 'compile-file (lambda (file) #(ok ())))
+   (meck:expect 'compile-util 'compile-file (lambda (_ _) #(ok ())))
    (let ((new-state (lsp-proc:process-input
                               (make-compl-example-textDocument/didOpen-request)
                               (make-lsp-state)
@@ -219,7 +219,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 (deftest process-textDocument/completion-message--trigger-char
   (with-fixture
    (meck:new 'compile-util)
-   (meck:expect 'compile-util 'compile-file (lambda (file) #(ok ())))
+   (meck:expect 'compile-util 'compile-file (lambda (_ _) #(ok ())))
    (let ((new-state (lsp-proc:process-input
                      (make-compl-example-textDocument/didOpen-request)
                      (make-lsp-state)

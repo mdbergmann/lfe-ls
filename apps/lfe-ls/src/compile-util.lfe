@@ -1,12 +1,17 @@
 (defmodule compile-util
-  (export (compile-file 1)))
+  (export (compile-file 2)))
 
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
-(defun compile-file (path)
+(defun compile-file (path project-root)
   "Compiles file at `path` and returns a list of `diagnostic-item`s."
   (logger:debug "cd: ~p" `(,(file:get_cwd)))
-  (let ((comp-result (lfe_comp:file path '(verbose return))))
+  (logger:debug "pr: ~p" `(,project-root))
+  (let* ((out-dir (if (== 0 (length project-root))
+                    "./.lfe-ls-out"
+                    (++ project-root "/.lfe-ls-out")))
+         (_ (file:make_dir out-dir))
+         (comp-result (lfe_comp:file path `(verbose return #(outdir ,out-dir)))))
     (case comp-result
       ((tuple 'ok warnings _)
        (%generate-warn-diags warnings))

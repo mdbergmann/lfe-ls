@@ -1,7 +1,7 @@
 
 (defrecord lsp-state
   (initialized 'false (boolean))
-  (rootpath #"" (binary))
+  (rootpath "" (string))
   (documents #M()))
 
 (defun req-parse-error () -32700)

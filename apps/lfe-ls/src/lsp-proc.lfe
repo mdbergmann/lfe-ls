@@ -98,7 +98,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
     `#(#(reply ,(%make-result-response id (%make-initialize-result params)))
        ,(clj:-> state
              (set-lsp-state-initialized 'true)
-             (set-lsp-state-rootpath rootpath))
+             (set-lsp-state-rootpath (binary_to_list rootpath)))
        null)))
 
 (defun %on-initialized-req (id params state)
@@ -112,6 +112,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
               (`#(#"version" ,version) (find-tkey #"version" text-document))
               (`#(#"text" ,text) (find-tkey #"text" text-document))
               (file (binary_to_list (map-get (uri_string:parse uri) 'path)))
+              (rootpath (lsp-state-rootpath state))
               (new-state (set-lsp-state-documents
                           state
                           (map-set state-documents
@@ -120,7 +121,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
          `#(#(noreply null)
             ,new-state
             ,(lambda ()
-               (%compile-file-to-notify file uri version)))))
+               (%compile-file-to-notify file uri version rootpath)))))
       (_
        (logger:warning "Missing 'textDocument' param!")
        `#(#(noreply null) ,state null)))))
@@ -167,17 +168,18 @@ Handler functions (like `%on-initialize-req`) are expected to return:
     (let* ((`#(#"uri" ,uri) (find-tkey #"uri" text-document))
            (file (binary_to_list (map-get (uri_string:parse uri) 'path))))
       (let* ((state-documents (lsp-state-documents state))
+             (rootpath (lsp-state-rootpath state))
              (document (map-get state-documents uri))
              (version (document-version document)))
         `#(#(noreply null)
            ,state
            ,(lambda ()
-              (%compile-file-to-notify file uri version)))))))
+              (%compile-file-to-notify file uri version rootpath)))))))
 
-(defun %compile-file-to-notify (file uri version)
+(defun %compile-file-to-notify (file uri version project-root)
   (logger:debug "Compiling file: ~p" `(,file))
   (let ((diagnostics
-         (let ((compile-result (compile-util:compile-file file)))
+         (let ((compile-result (compile-util:compile-file file project-root)))
            (logger:debug "Compile-result: ~p" `(,compile-result))
            (case compile-result
              (`#(ok ,diags) diags)

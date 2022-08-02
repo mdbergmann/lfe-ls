@@ -39,6 +39,8 @@
    (let* ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false))))
           (`#(ok ,cwd) (file:get_cwd))
           (file (++ cwd "/compile-tmpls/error-no-include.lfe")))
+     (gen_tcp:send socket (make-simple-initialize-request))
+     (gen_tcp:recv socket 0)
      (gen_tcp:send socket (make-simple-textDocument/didOpen-request file))
      (gen_tcp:send socket (make-simple-textDocument/didSave-request file))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
@@ -50,8 +52,6 @@
 (deftest process-completion-message-2
   (with-fixture
    (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
-     (gen_tcp:send socket (make-simple-initialize-request))
-     (gen_tcp:recv socket 0)
      (gen_tcp:send socket (make-simple-textDocument/didOpen-request "/foobar.lfe"))
      (gen_tcp:send socket (make-simple-textDocument/completion-request))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
@@ -59,7 +59,7 @@
      (gen_tcp:close socket))))
 
 (defun make-simple-initialize-request ()
-  #"Content-Length: 181\r\n\r\n{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"initialize\",\"params\":{\"processId\":null,\"clientInfo\":{\"name\":\"eglot\"},\"rootPath\":null,\"rootUri\":null,\"initializationOptions\":{},\"capabilities\":{}}}")
+  #"Content-Length: 183\r\n\r\n{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"initialize\",\"params\":{\"processId\":null,\"clientInfo\":{\"name\":\"eglot\"},\"rootPath\":\"/tmp\",\"rootUri\":null,\"initializationOptions\":{},\"capabilities\":{}}}")
 
 (defun make-simple-textDocument/didOpen-request (file)
   (let* ((content (lfe_io:format1 "{

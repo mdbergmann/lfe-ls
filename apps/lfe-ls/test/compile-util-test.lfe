@@ -8,7 +8,22 @@
 (deftest compile--ok--no-include
   (let ((`#(ok ,cwd) (file:get_cwd)))
     (is-equal #(ok ()) (compile-util:compile-file
-                        (++ cwd "/compile-tmpls/ok-no-include.lfe")))))
+                                     (++ cwd "/compile-tmpls/ok-no-include.lfe")
+                                     cwd))))
+
+(deftest compile--error--no-out-dir
+  (let ((`#(ok ,cwd) (file:get_cwd)))
+    (is-equal (tuple
+               'ok
+               (list
+                (make-diagnostic-item
+                 range (line-to-range 0)
+                 severity (diag-severity-error)
+                 source #"lfe_lint"
+                 message #"#(undefined_function #(my-fun 1))")))
+              (compile-util:compile-file
+                            (++ cwd "/compile-tmpls/error-no-include.lfe")
+                            ""))))
 
 (deftest compile--error--no-include
   (let ((`#(ok ,cwd) (file:get_cwd)))
@@ -21,7 +36,8 @@
                  source #"lfe_lint"
                  message #"#(undefined_function #(my-fun 1))")))
               (compile-util:compile-file
-               (++ cwd "/compile-tmpls/error-no-include.lfe")))))
+                            (++ cwd "/compile-tmpls/error-no-include.lfe")
+                            cwd))))
 
 (deftest compile--error--include-doesnt-exist
   (let ((`#(ok ,cwd) (file:get_cwd)))
@@ -34,7 +50,8 @@
                  source #"lfe_macro_include"
                  message #"#(no_include lib \"doesnt-exist.lfe\")")))
               (compile-util:compile-file
-               (++ cwd "/compile-tmpls/error-incl-not-exists.lfe")))))
+                            (++ cwd "/compile-tmpls/error-incl-not-exists.lfe")
+                            cwd))))
 
 (deftest compile--ok-unused-functions
   (let ((`#(ok ,cwd) (file:get_cwd)))
@@ -52,4 +69,5 @@
                  source #"erl_lint"
                  message #"#(unused_function #(foo2 0))")))
               (compile-util:compile-file
-               (++ cwd "/compile-tmpls/ok-incl-unused.lfe")))))
+                            (++ cwd "/compile-tmpls/ok-incl-unused.lfe")
+                            cwd))))
