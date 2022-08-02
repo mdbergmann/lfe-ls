@@ -5,6 +5,7 @@
 
 (defun compile-file (path)
   "Compiles file at `path` and returns a list of `diagnostic-item`s."
+  (logger:debug "cd: ~p" `(,(file:get_cwd)))
   (let ((comp-result (lfe_comp:file path '(verbose return))))
     (case comp-result
       ((tuple 'ok warnings _)

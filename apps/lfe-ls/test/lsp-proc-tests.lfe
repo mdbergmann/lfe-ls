@@ -98,13 +98,15 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 
 (deftest process-simple-initialize-message
   (with-fixture
-   (is-equal (make-lsp-state initialized 'true)
-             (lsp-proc:process-input (make-simple-initialize-request)
-                                     (make-lsp-state)
-                                     (fake-sender-fun)))
-   (is (expected-result-p
-        #(reply
-          #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")))))
+   (let ((initialized-lsp-state (lsp-proc:process-input (make-simple-initialize-request)
+                                          (make-lsp-state)
+                                          (fake-sender-fun))))
+     (is-equal (make-lsp-state initialized 'true rootpath #"/tmp/foo")
+               initialized-lsp-state)
+     (is (expected-result-p
+          #(reply
+            #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")))
+     (is-equal #"/tmp/foo" (lsp-state-rootpath initialized-lsp-state)))))
 
 (deftest process-initialized-message
   (with-fixture
@@ -119,8 +121,8 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (meck:new 'compile-util)
    (meck:expect 'compile-util 'compile-file (lambda (file) #(ok ())))
 
-   (is-equal #(lsp-state false #M(#"file:///foobar.lfe"
-                                  #(document #"file:///foobar.lfe" 1 #"the-document-text")))
+   (is-equal #(lsp-state false #"" #M(#"file:///foobar.lfe"
+                                      #(document #"file:///foobar.lfe" 1 #"the-document-text")))
              (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
                                      (make-lsp-state)
                                      (fake-sender-fun)))
@@ -133,10 +135,10 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (meck:new 'compile-util)
    (meck:expect 'compile-util 'compile-file (lambda (file) #(ok ())))
 
-   (is-equal #(lsp-state false #M(#"file:///foobar.lfe"
-                                  #(document #"file:///foobar.lfe" 1 #"the-document-text")
-                                  #"file:///foobar2.lfe"
-                                  #(document #"file:///foobar2.lfe" 2 #"the-document-text2")))
+   (is-equal #(lsp-state false #"" #M(#"file:///foobar.lfe"
+                                      #(document #"file:///foobar.lfe" 1 #"the-document-text")
+                                      #"file:///foobar2.lfe"
+                                      #(document #"file:///foobar2.lfe" 2 #"the-document-text2")))
              (lsp-proc:process-input (make-simple-textDocument/didOpen-request)
                                      (make-lsp-state documents
                                                      #M(#"file:///foobar2.lfe"
@@ -155,8 +157,8 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 
 (deftest process-textDocument/didChange-message
   (with-fixture
-   (is-equal #(lsp-state false #M(#"file:///foobar.lfe"
-                                  #(document #"file:///foobar.lfe" 2 #"thedocument-text")))
+   (is-equal #(lsp-state false #"" #M(#"file:///foobar.lfe"
+                                      #(document #"file:///foobar.lfe" 2 #"thedocument-text")))
              (lsp-proc:process-input (make-simple-textDocument/didChange-request)
                                      (injected-document-state)
                                      (fake-sender-fun)))
@@ -164,7 +166,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 
 (deftest process-textDocument/didClose-message
   (with-fixture
-   (is-equal #(lsp-state false #M())
+   (is-equal #(lsp-state false #"" #M())
              (lsp-proc:process-input (make-simple-textDocument/didClose-request)
                                      (injected-document-state)
                                      (fake-sender-fun)))
@@ -259,7 +261,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 \"method\":\"initialize\",
 \"params\":{\"processId\":null,
 \"clientInfo\":{\"name\":\"eglot\"},
-\"rootPath\":null,\"rootUri\":null,
+\"rootPath\":\"/tmp/foo\",\"rootUri\":null,
 \"initializationOptions\":{},
 \"capabilities\":{}}
 }")

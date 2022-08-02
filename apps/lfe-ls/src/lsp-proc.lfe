@@ -94,9 +94,12 @@ Handler functions (like `%on-initialize-req`) are expected to return:
 ;; method handlers
 
 (defun %on-initialize-req (id params state)
-  `#(#(reply ,(%make-result-response id (%make-initialize-result params)))
-     ,(set-lsp-state-initialized state 'true)
-     null))
+  (let ((`#(#"rootPath" ,rootpath) (find-tkey #"rootPath" params)))
+    `#(#(reply ,(%make-result-response id (%make-initialize-result params)))
+       ,(clj:-> state
+             (set-lsp-state-initialized 'true)
+             (set-lsp-state-rootpath rootpath))
+       null)))
 
 (defun %on-initialized-req (id params state)
   `#(#(noreply null) ,state null))
