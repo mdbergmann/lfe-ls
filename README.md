@@ -26,6 +26,8 @@ Planned further support is:
 Auto-completion is rudimentary right now. It completes global symbols/atoms, functions/macros and functions on a module basis by parsing the text and looking for ':' character which indicates completing for a module.
 There is a lot of room for improvement. I.e.: functions within a module could be parsed from the text, or variables within a let.
 
+### Emacs lfe-mode tweaks
+
 To allow Emacs to trigger completion on `:` character one has to tweak the lfe-mode to change `lfe-mode-syntax-table` and set `:` to be a punctuation character. Here is the full function (found in lfe-mode.el):
 
 ```lisp
@@ -51,6 +53,9 @@ So if ltest is added as a test dependency then its includes like:
 
 will automatically be found.
 
+### Project support
+
+In order to allow lfe-ls to work with a workspace folder it is adviceable to create a git repository in the folder your are operating. That will Emacs to recognize the folder as a project.
 
 ## Build [&#x219F;](#table-of-contents)
 
