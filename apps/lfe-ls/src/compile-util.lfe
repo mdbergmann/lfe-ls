@@ -7,11 +7,9 @@
   "Compiles file at `path` and returns a list of `diagnostic-item`s."
   (logger:debug "cd: ~p" `(,(file:get_cwd)))
   (logger:debug "pr: ~p" `(,project-root))
-  (let* ((out-dir (if (== 0 (length project-root))
-                    "./.lfe-ls-out"
-                    (++ project-root "/.lfe-ls-out")))
-         (_ (file:make_dir out-dir))
-         (comp-result (lfe_comp:file path `(verbose return #(outdir ,out-dir)))))
+  (let* ((options (%generate-options project-root))
+         (comp-result (lfe_comp:file path options)))
+    (logger:debug "Compiling with options: ~p" `(,options))
     (case comp-result
       ((tuple 'ok warnings _)
        (%generate-warn-diags warnings))
@@ -21,6 +19,17 @@
        (%generate-error-diags errors))
       (_
        comp-result))))
+
+(defun %generate-options (project-root)
+  "Generates options for the compiler.
+Creates output folder is it doesn't exist. (this should be done on application startup and made available as application env)"
+  (let* (((tuple 'ok cwd) (file:get_cwd))
+         (out-dir (if (== 0 (length project-root))
+                    "./.lfe-ls-out"
+                    (++ project-root ".lfe-ls-out")))
+         (_ (file:make_dir out-dir))
+         (includes `(#(i ".") #(i ,(++ cwd "/_build/test/lib")))))
+    (lists:append `(verbose return #(outdir ,out-dir)) includes)))
 
 (defun %generate-warn-diags (warnings)
   "as in 3."
