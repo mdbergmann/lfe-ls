@@ -21,9 +21,35 @@ It is largely work in progress. The following LSP functionality is implemented:
 Planned further support is:
 
 - hover support for showing documentation (via eldoc in Eglot).
+- showing documentation on completions
 
 Auto-completion is rudimentary right now. It completes global symbols/atoms, functions/macros and functions on a module basis by parsing the text and looking for ':' character which indicates completing for a module.
 There is a lot of room for improvement. I.e.: functions within a module could be parsed from the text, or variables within a let.
+
+To allow Emacs to trigger completion on `:` character one has to tweak the lfe-mode to change `lfe-mode-syntax-table` and set `:` to be a punctuation character. Here is the full function (found in lfe-mode.el):
+
+```lisp
+(defvar lfe-mode-syntax-table
+  (let ((table (copy-syntax-table lisp-mode-syntax-table)))
+    ;; Like scheme we allow [ ... ] as alternate parentheses.
+    (modify-syntax-entry ?\[ "(]  " table)
+    (modify-syntax-entry ?\] ")[  " table)
+    ;; ":" character should be used as punctuation to separate symbols
+    (modify-syntax-entry ?: "." table)
+    table)
+  "Syntax table in use in Lisp Flavoured Erlang mode buffers.")
+```
+
+### Support for ltest
+
+`lfe-ls` automatically adds `_build/test/lib` as include to the compiler.
+So if ltest is added as a test dependency then its includes like: 
+
+```lisp
+(include-lib "ltest/include/ltest-macros.lfe")
+```
+
+will automatically be found.
 
 
 ## Build [&#x219F;](#table-of-contents)
@@ -37,7 +63,7 @@ $ rebar3 lfe compile
 To create a release do:
 
 ```shell
-$ rebar3 as prod do release,escriptize
+$ rebar3 as prod do clean,release,escriptize
 ```
 
 An executable can be started as `_build/prod/bin/lfe-ls`.
