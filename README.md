@@ -28,7 +28,7 @@ There is a lot of room for improvement. I.e.: functions within a module could be
 
 ### Emacs lfe-mode tweaks
 
-To allow Emacs to trigger completion on `:` character one has to tweak the lfe-mode to change `lfe-mode-syntax-table` and set `:` to be a punctuation character. Here is the full function (found in lfe-mode.el):
+To allow Emacs with Eglot (or also lsp-mode) to trigger completion on `:` character one has to tweak the lfe-mode to change `lfe-mode-syntax-table` and set `:` to be a punctuation character. Here is the full function (found in lfe-mode.el):
 
 ```lisp
 (defvar lfe-mode-syntax-table
