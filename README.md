@@ -18,6 +18,9 @@ It is largely work in progress. The following LSP functionality is implemented:
 - `textDocument/completion` request/response implements global symbols and loaded modules as well as module functions.
 - `textDocument/publishDiagnostics` notification to push compile diagnostics on saving a file.
 
+`didOpen` and `didSave` will compile the source file in the server to provide diagnostics to the client.
+However, this doe not replace the `C-c-k` key sequence to compile the to you open REPL in order to take the changes into effect.
+
 Planned further support is:
 
 - hover support for showing documentation (via eldoc in Eglot).
