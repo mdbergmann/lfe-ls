@@ -87,8 +87,8 @@ Handler functions (like `%on-initialize-req`) are expected to return:
                ,state
                null)))))
     (funcall send-fun `#(,code ,(ljson:encode response)))
-    (clj:when-not (== cont 'null)
-         (%send-async cont send-fun))
+    (if (!= cont 'null)
+      (%send-async cont send-fun))
     state))
 
 ;; method handlers
