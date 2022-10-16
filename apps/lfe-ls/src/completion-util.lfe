@@ -4,7 +4,7 @@
 (include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
-(defun find-completions-at (text position trigger-char)
+(defun find-completions-at (position text trigger-char)
   (case trigger-char
     (#"(" (%find-symbols-and-modules))
     (#":" (%find-module-functions

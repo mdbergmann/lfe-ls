@@ -199,16 +199,12 @@ Handler functions (like `%on-initialize-req`) are expected to return:
       (let* ((state-documents (lsp-state-documents state))
              (document (map-get state-documents uri))
              (text (document-text document)))
-        `#(#(reply ,(%make-result-response
+        `#(#(reply ,(%make-completions-response
                      id
-                     (%make-completion-result
-                      (completion-util:find-completions-at
-                       text
-                       (make-position line line
-                                      character character)
-                       (case trigger-char
-                         ('() 'null)
-                         (else (tcdr else)))))))
+                     text
+                     (make-position line line
+                                    character character)
+                     trigger-char))
            ,state
            null)))))
 
@@ -226,11 +222,22 @@ Handler functions (like `%on-initialize-req`) are expected to return:
   `(#(#"id" ,id) #(#"error" (#(#"code" ,code)
                              #(#"message" ,err-msg)))))
 
+(defun %make-completions-response (id text position trigger-char)
+  (%make-result-response id (%make-completions-result
+                             (completion-util:find-completions-at
+                              position
+                              text
+                              (case trigger-char
+                                ('() 'null)
+                                (else (tcdr else)))))))
+
+;; --------------------------------------------------
+
 (defun %make-initialize-result (req-params)
-  `(,(%make-capabilities)
+  `(,(%%make-capabilities)
     #(#"serverInfo" (#(#"name" #"lfe-ls")))))
 
-(defun %make-capabilities ()
+(defun %%make-capabilities ()
   "Text sync is full document."
   #(#"capabilities" (#(#"completionProvider"
                        (#(#"resolveProvider" false)
@@ -238,18 +245,13 @@ Handler functions (like `%on-initialize-req`) are expected to return:
                      #(#"textDocumentSync"
                        (#(#"openClose" true) #(#"change" 1))))))
 
-(defun %make-notification (method params)
-  `(#(#"jsonrpc" #"2.0")
-    #(#"method" ,method)
-    #(#"params" ,params)))
-
-(defun %make-completion-result (completions)
+(defun %make-completions-result (completions)
   "`completions' is a list of `completion-item' records."
   (lists:map (lambda (citem)
-               (%completion-item-to-json citem))
+               (%%completion-item-to-json citem))
              completions))
 
-(defun %completion-item-to-json (citem)
+(defun %%completion-item-to-json (citem)
   (let ((insert-text (completion-item-insert-text citem)))
     (lists:append
      `(#(#"label" ,(completion-item-label citem))
@@ -260,28 +262,33 @@ Handler functions (like `%on-initialize-req`) are expected to return:
          #(#"insertText" ,insert-text))
        '()))))
 
+(defun %make-notification (method params)
+  `(#(#"jsonrpc" #"2.0")
+    #(#"method" ,method)
+    #(#"params" ,params)))
+
 (defun %make-diagnostic-params (uri version diagnostics)
   "Diagnostics are a list diagnostic records."
   `(#(#"uri" ,uri)
     #(#"version" ,version)
-    #(#"diagnostics" ,(%make-diagnostics-result diagnostics))))
+    #(#"diagnostics" ,(%%make-diagnostics-result diagnostics))))
 
-(defun %make-diagnostics-result (diagnostics)
+(defun %%make-diagnostics-result (diagnostics)
   "`diagnostics` are a list of `diagnostic-item` records."
   (lists:map (lambda (ditem)
-               (%diagnostic-item-to-json ditem))
+               (%%diagnostic-item-to-json ditem))
              diagnostics))
 
-(defun %diagnostic-item-to-json (ditem)
-  `(#(#"range" ,(%range-to-json (diagnostic-item-range ditem)))
+(defun %%diagnostic-item-to-json (ditem)
+  `(#(#"range" ,(%%range-to-json (diagnostic-item-range ditem)))
     #(#"severity" ,(diagnostic-item-severity ditem))
     #(#"source" ,(diagnostic-item-source ditem))
     #(#"message" ,(diagnostic-item-message ditem))))
 
-(defun %range-to-json (range)
-  `(#(#"start" ,(%position-to-json (range-start range)))
-    #(#"end" ,(%position-to-json (range-end range)))))
+(defun %%range-to-json (range)
+  `(#(#"start" ,(%%position-to-json (range-start range)))
+    #(#"end" ,(%%position-to-json (range-end range)))))
 
-(defun %position-to-json (pos)
+(defun %%position-to-json (pos)
   `(#(#"line" ,(position-line pos))
     #(#"character" ,(position-character pos))))

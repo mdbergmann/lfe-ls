@@ -59,7 +59,9 @@
                                            `(make-lsp-state initialized 'true)))
    (meck:expect 'response-sender 'send-response (lambda (send-fun device response) 'ok))
 
-   (let* ((response (gen_server:call pid `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}Content-Length: 9\r\n\r\n{\"Hello\"}"))))
+   (let* ((response (gen_server:call
+                     pid
+                     `#(received #"Content-Length: 8\r\n\r\n{\"Ping\"}Content-Length: 9\r\n\r\n{\"Hello\"}"))))
      ;;(is-equal `#(ok #(ls-state nil #(req #"{\"Ping\"}") #(lsp-state true))) response)
      (is (meck:called 'lsp-proc 'process-input '(#"{\"Ping\"}" lsp-model)))
      (is (meck:called 'lsp-proc 'process-input '(#"{\"Hello\"}" lsp-model)))
