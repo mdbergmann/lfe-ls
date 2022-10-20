@@ -29,35 +29,35 @@
     (is-equal `#(completion-item #"io" #"write" 2 #"" 3)
               (car (lists:reverse funs)))))
 
-;; (deftest find-completions--trigger-character--colon--module-functions--space-delim
-;;   (let ((funs (lists:sort (completion-util:find-completions-at
-;;                            #" io:"
-;;                            (make-position line 0 character 4)
-;;                            #":"))))
-;;     (is-equal `#(completion-item #"columns/0" 3 #"io:" #"columns")
-;;               (car funs))
-;;     (is-equal `#(completion-item #"write/2" 3 #"io:" #"write")
-;;               (car (lists:reverse funs)))))
+(deftest find-completions--trigger-character--colon--module-functions--space-delim
+  (let ((funs (lists:sort (completion-util:find-completions-at
+                           (make-position line 0 character 4)
+                           #" io:"
+                           #":"))))
+    (is-equal `#(completion-item #"io" #"columns" 0 #"" 3)
+              (car funs))
+    (is-equal `#(completion-item #"io" #"write" 2 #"" 3)
+              (car (lists:reverse funs)))))
 
-;; (deftest find-completions--trigger-character--colon--no-delim
-;;   (let ((funs (lists:sort (completion-util:find-completions-at
-;;                            #"io:"
-;;                            (make-position line 0 character 4)
-;;                            #":"))))
-;;     (is-equal `#(completion-item #"columns/0" 3 #"io:" #"columns")
-;;               (car funs))
-;;     (is-equal `#(completion-item #"write/2" 3 #"io:" #"write")
-;;               (car (lists:reverse funs)))))
+(deftest find-completions--trigger-character--colon--no-delim
+  (let ((funs (lists:sort (completion-util:find-completions-at
+                           (make-position line 0 character 4)
+                           #"io:"
+                           #":"))))
+    (is-equal `#(completion-item #"io" #"columns" 0 #"" 3)
+              (car funs))
+    (is-equal `#(completion-item #"io" #"write" 2 #"" 3)
+              (car (lists:reverse funs)))))
 
-;; (deftest find-completions--invoked--symbol-or-module--space-delim
-;;   (let ((funs (lists:sort (completion-util:find-completions-at
-;;                            #" de"
-;;                            (make-position line 0 character 3)
-;;                            'null))))
-;;     (is-equal `#(completion-item #"abs/1" 3 #"erlang:" #"abs")
-;;               (car funs))
-;;     (is-equal `#(completion-item #"zlib" 9 #"" #"")
-;;               (car (lists:reverse funs)))))
+(deftest find-completions--invoked--symbol-or-module--space-delim
+  (let ((funs (lists:sort (completion-util:find-completions-at
+                           (make-position line 0 character 3)
+                           #" de"
+                           'null))))
+    (is-equal `#(completion-item #"application" null null null 9)
+              (car funs))
+    (is-equal `#(completion-item #"zlib" null null null 9)
+              (car (lists:reverse funs)))))
 
 ;; (deftest find-completions--invoked--symbol-or-module--no-delim
 ;;   (let ((funs (lists:sort (completion-util:find-completions-at
