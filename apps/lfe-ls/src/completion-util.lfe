@@ -51,7 +51,7 @@ Two entries if there was a ':' in the text that was parsed. The second element i
    (let* ((module-name (case module
                          (`(,a ,_) a)
                          (`(,a) a)))
-          (module-info (call (erlang:binary_to_atom module-name) 'module_info))
+          (module-info (call (binary_to_atom module-name) 'module_info))
           (module-funs (cl:elt 1 (cadr module-info))))
      (%fun-tuples-to-completions module-funs
                                  (completion-item-kind-function)
@@ -66,7 +66,7 @@ Two entries if there was a ':' in the text that was parsed. The second element i
                   ,(%loaded-modules))))
 
 (defun %predefined-erlang-functions ()
-  (%prep-internal-functions (erlang:module_info)
+  (%prep-internal-functions (module_info)
                             (lambda (name arity)
                               (erl_internal:bif name arity))
                             "erlang"))
@@ -111,9 +111,9 @@ Two entries if there was a ':' in the text that was parsed. The second element i
   (lists:map (lambda (m)
                (let ((module-name (cl:elt 0 m)))
                  (make-completion-item
-                  module (if (erlang:is_atom module-name)
-                           (erlang:atom_to_list module-name)
-                           module-name)
+                  module (if (is_atom module-name)
+                           (list_to_binary (atom_to_list module-name))
+                           (list_to_binary module-name))
                   kind (completion-item-kind-module))))
              (code:all_loaded)))
 
@@ -131,11 +131,16 @@ Two entries if there was a ':' in the text that was parsed. The second element i
   "Converts function tuples as retrieved from 'module_info' to 'completion-item' records."
   (lists:map (lambda (ft)
                (let* ((`#(,name ,arity) ft)
-                      (fun-name (erlang:atom_to_list name)))
+                      (fun-name (atom_to_list name)))
                  (make-completion-item
-                  module module
-                  func fun-name
+                  module (%to-binary module)
+                  func (%to-binary fun-name)
                   arity arity
-                  detail ""
+                  detail (%to-binary "")
                   kind kind)))
              ftuples))
+
+(defun %to-binary (thing)
+  (if (is_binary thing)
+    thing
+    (list_to_binary thing)))

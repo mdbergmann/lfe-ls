@@ -6,27 +6,28 @@
 
 (deftest find-completions--trigger-character--open-paren--global-symbols
   (let ((funs (lists:sort (completion-util:find-completions-at
-                           #"("
                            (make-position line 0 character 1)
+                           #"("
                            #"("))))
-    (logger:notice "~p" `(,funs))
-    (is-equal `#(completion-item "application" null null null 9)
+    ;;(logger:notice "~p" `(,funs))
+    (is-equal `#(completion-item #"application" null null null 9)
               (car funs))
-    (is-equal `#(completion-item "zlib" null null null 9)
+    (is-equal `#(completion-item #"zlib" null null null 9)
               (car (lists:reverse funs)))
-    (is-equal `#(completion-item "erlang" "register" 2 "" 3)
-              (cl:elt 1 (lists:search (lambda (item) (== "register" (completion-item-func item)))
+    (is-equal `#(completion-item #"lfe-core" #"binary" null #"" 14)
+              (cl:elt 1 (lists:search (lambda (item) (== #"binary" (completion-item-func item)))
                                       funs)))))
 
-;; (deftest find-completions--trigger-character--colon--module-functions--paren-delim
-;;   (let ((funs (lists:sort (completion-util:find-completions-at
-;;                            #"(io:"
-;;                            (make-position line 0 character 4)
-;;                            #":"))))
-;;     (is-equal `#(completion-item #"columns/0" 3 #"io:" #"columns")
-;;               (car funs))
-;;     (is-equal `#(completion-item #"write/2" 3 #"io:" #"write")
-;;               (car (lists:reverse funs)))))
+(deftest find-completions--trigger-character--colon--module-functions--paren-delim
+  (let ((funs (lists:sort (completion-util:find-completions-at
+                           (make-position line 0 character 4)
+                           #"(io:"
+                           #":"))))
+    ;;(logger:notice "~p" `(,funs))
+    (is-equal `#(completion-item #"io" #"columns" 0 #"" 3)
+              (car funs))
+    (is-equal `#(completion-item #"io" #"write" 2 #"" 3)
+              (car (lists:reverse funs)))))
 
 ;; (deftest find-completions--trigger-character--colon--module-functions--space-delim
 ;;   (let ((funs (lists:sort (completion-util:find-completions-at

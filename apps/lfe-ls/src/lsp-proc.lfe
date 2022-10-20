@@ -252,15 +252,16 @@ Handler functions (like `%on-initialize-req`) are expected to return:
              completions))
 
 (defun %%completion-item-to-json (citem)
-  (let ((insert-text (completion-item-insert-text citem)))
-    (lists:append
-     `(#(#"label" ,(completion-item-label citem))
-       #(#"kind" ,(completion-item-kind citem))
-       #(#"detail" ,(completion-item-detail citem)))
-     (if (> (byte_size insert-text) 0)
-       `(#(#"insertTextFormat" 1)
-         #(#"insertText" ,insert-text))
-       '()))))
+  '())
+  ;; (let ((insert-text (completion-item-insert-text citem)))
+  ;;   (lists:append
+  ;;    `(#(#"label" ,(completion-item-label citem))
+  ;;      #(#"kind" ,(completion-item-kind citem))
+  ;;      #(#"detail" ,(completion-item-detail citem)))
+  ;;    (if (> (byte_size insert-text) 0)
+  ;;      `(#(#"insertTextFormat" 1)
+  ;;        #(#"insertText" ,insert-text))
+  ;;      '()))))
 
 (defun %make-notification (method params)
   `(#(#"jsonrpc" #"2.0")
