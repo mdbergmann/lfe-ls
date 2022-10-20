@@ -27,10 +27,11 @@
 (defun completion-item-kind-struct () 22)
 
 (defrecord completion-item
-  (label)
-  (kind)
-  (detail #"" (binary))
-  (insert-text #"" (binary)))
+  (module 'null)
+  (func 'null)
+  (arity 'null)
+  (detail 'null)
+  (kind 'null))
 
 (defrecord range
   (start (make-position))

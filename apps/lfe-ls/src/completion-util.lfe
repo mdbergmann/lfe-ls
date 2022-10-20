@@ -55,7 +55,7 @@ Two entries if there was a ':' in the text that was parsed. The second element i
           (module-funs (cl:elt 1 (cadr module-info))))
      (%fun-tuples-to-completions module-funs
                                  (completion-item-kind-function)
-                                 (binary (module-name binary) (#":" binary))))))
+                                 module-name))))
 
 (defun %find-symbols-and-modules ()
   (lists:append `(,(%predefined-lfe-functions)
@@ -69,14 +69,14 @@ Two entries if there was a ':' in the text that was parsed. The second element i
   (%prep-internal-functions (erlang:module_info)
                             (lambda (name arity)
                               (erl_internal:bif name arity))
-                            #"erlang:"))
+                            "erlang"))
 
 (defun %predefined-lfe-functions ()
   "Predefined LFE functions."
   (%prep-internal-functions (lfe:module_info)
                             (lambda (name arity)
                               (lfe_internal:is_lfe_bif name arity))
-                            #"lfe:"))
+                            "lfe"))
 
 (defun %predefined-lfe-core-forms ()
   (%fun-tuples-to-completions
@@ -88,7 +88,7 @@ Two entries if there was a ':' in the text that was parsed. The second element i
                       define-function define-macro type-test guard-bif
                       include-lib))
    (completion-item-kind-keyword)
-   #"lfe-core"))
+   "lfe-core"))
 
 (defun %predefined-macro-forms ()
   (%fun-tuples-to-completions
@@ -97,7 +97,7 @@ Two entries if there was a ':' in the text that was parsed. The second element i
               '(list* let* flet flet* fletrec cond andalso orelse fun fun lc list-comp
                       bc binary-comp match-spec))
    (completion-item-kind-macro)
-   #"lfe-core"))
+   "lfe-core"))
 
 (defun %predefined-common-lisp-inspired-macros ()
   (%fun-tuples-to-completions
@@ -105,17 +105,19 @@ Two entries if there was a ':' in the text that was parsed. The second element i
                 `#(,elem null))
               '(defun defmacro defsyntax macrolet syntaxlet prog1 prog2 defmodule defrecord))
    (completion-item-kind-keyword)
-   #"lfe-core"))
+   "lfe-core"))
 
 (defun %loaded-modules ()
   (lists:map (lambda (m)
                (let ((module-name (cl:elt 0 m)))
                  (make-completion-item
-                  label (erlang:atom_to_binary module-name)
+                  module (if (erlang:is_atom module-name)
+                           (erlang:atom_to_list module-name)
+                           module-name)
                   kind (completion-item-kind-module))))
              (code:all_loaded)))
 
-(defun %prep-internal-functions (module-info bif-fun-pred detail)
+(defun %prep-internal-functions (module-info bif-fun-pred module)
   (let* ((mod-functions (cl:elt 1 (cadr module-info)))
          (visible-functions (lists:filter (lambda (ft)
                                             (let ((`#(,name ,arity) ft))
@@ -123,20 +125,17 @@ Two entries if there was a ':' in the text that was parsed. The second element i
                                           mod-functions)))
     (%fun-tuples-to-completions visible-functions
                                 (completion-item-kind-function)
-                                detail)))
+                                module)))
 
-(defun %fun-tuples-to-completions (ftuples kind detail)
+(defun %fun-tuples-to-completions (ftuples kind module)
   "Converts function tuples as retrieved from 'module_info' to 'completion-item' records."
   (lists:map (lambda (ft)
                (let* ((`#(,name ,arity) ft)
-                      (fun-name (erlang:atom_to_list name))
-                      (fun-name-bin (erlang:atom_to_binary name)))
+                      (fun-name (erlang:atom_to_list name)))
                  (make-completion-item
-                  label (case arity
-                          ('null fun-name-bin)
-                          (ar (erlang:list_to_binary
-                               (io_lib:format "~s/~p" `(,fun-name ,ar)))))
-                  kind kind
-                  detail detail
-                  insert-text fun-name-bin)))
+                  module module
+                  func fun-name
+                  arity arity
+                  detail ""
+                  kind kind)))
              ftuples))
