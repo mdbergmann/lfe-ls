@@ -264,18 +264,20 @@ Handler functions (like `%on-initialize-req`) are expected to return:
            (label (list_to_binary
                    (case arity
                      ('null base-label)
-                     (ar (lfe_io:format1 "~s ~s"
+                     (ar (lfe_io:format1 "~s~s"
                                          `(,base-label
-                                           ,(lfe_io:format1 "arity:~p" `(,ar))))))))
+                                           ,(lfe_io:format1 "/~p" `(,ar))))))))
            (insertText (case func
                          ('null module)
                          (#"" module)
-                         (fn fn))))
-      `(#(#"label" ,label)
-        #(#"kind" ,kind)
-        #(#"detail" ,detail)
-        #(#"insertTextFormat" 1)
-        #(#"insertText" ,insertText)))))
+                         (fn fn)))
+           (result `(#(#"label" ,label)
+                     #(#"kind" ,kind)
+                     #(#"detail" ,detail)
+                     #(#"insertTextFormat" 2)
+                     #(#"insertText" ,insertText))))
+      ;;(logger:notice "result: ~p" `(,result))
+      result)))
 
 (defun %make-notification (method params)
   `(#(#"jsonrpc" #"2.0")

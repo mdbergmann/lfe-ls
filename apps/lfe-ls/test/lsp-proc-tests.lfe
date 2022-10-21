@@ -212,7 +212,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
      (meck:unload 'completion-util)
      (is (expected-result-p
           #(reply
-            #"{\"id\":99,\"result\":[{\"label\":\"lfe-core:defun\",\"kind\":14,\"detail\":\"\",\"insertTextFormat\":1,\"insertText\":\"defun\"}]}"))))
+            #"{\"id\":99,\"result\":[{\"label\":\"lfe-core:defun\",\"kind\":14,\"detail\":\"\",\"insertTextFormat\":2,\"insertText\":\"defun\"}]}"))))
    (is (meck:validate 'compile-util))
    (meck:unload 'compile-util)))
 
@@ -244,7 +244,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
      (meck:unload 'completion-util)
      (is (expected-result-p
           #(reply
-            #"{\"id\":99,\"result\":[{\"label\":\"foo:defun arity:3\",\"kind\":2,\"detail\":\"foo\",\"insertTextFormat\":1,\"insertText\":\"defun\"}]}"))))
+            #"{\"id\":99,\"result\":[{\"label\":\"foo:defun/3\",\"kind\":2,\"detail\":\"foo\",\"insertTextFormat\":2,\"insertText\":\"defun\"}]}"))))
    (is (meck:validate 'compile-util))
    (meck:unload 'compile-util)))
 
