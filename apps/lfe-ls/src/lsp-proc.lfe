@@ -251,9 +251,10 @@ Handler functions (like `%on-initialize-req`) are expected to return:
 
 (defun %make-hover-response (id text position)
   (%make-result-response id
-                         `(#(#"contents" ,(case (hover-util:get-docu "foo" "bar")
-                                            (`#(ok ,docu) docu)
-                                            (_ #""))))))
+                         `(#(#"contents"
+                             ,(case (hover-util:get-docu "foo" "bar")
+                                (`#(ok ,docu) docu)
+                                (_ #""))))))
 
 ;; --------------------------------------------------
 
