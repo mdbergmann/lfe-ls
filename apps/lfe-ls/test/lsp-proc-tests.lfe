@@ -49,7 +49,7 @@
 This one will just push the computed result to our fake-lsp-resp-sender actor"
   `(let ((me (self)))
      (lambda (lsp-resp)
-       ;;(logger:notice "putting to receiver: ~p" `(,lsp-resp))
+       (logger:notice "putting to receiver: ~p" `(,lsp-resp))
        (! receiver `#(,me put ,lsp-resp)))))
 
 (deftest test-lsp-receiver
@@ -105,7 +105,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
                initialized-lsp-state)
      (is (expected-result-p
           #(reply
-            #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")))
+            #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1},\"hoverProvider\":true},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")))
      (is-equal "/tmp/foo" (lsp-state-rootpath initialized-lsp-state)))))
 
 (deftest process-initialized-message
@@ -237,9 +237,9 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
                                 kind 2))))))
      (is-equal new-state
                (lsp-proc:process-input
-                (make-simple-textDocument/completion-request--trigger-char)
-                new-state
-                (fake-sender-fun)))
+                         (make-simple-textDocument/completion-request--trigger-char)
+                         new-state
+                         (fake-sender-fun)))
      (meck:validate 'completion-util)
      (meck:unload 'completion-util)
      (is (expected-result-p
@@ -247,6 +247,28 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
             #"{\"id\":99,\"result\":[{\"label\":\"foo:defun/3\",\"kind\":2,\"detail\":\"foo\",\"insertTextFormat\":2,\"insertText\":\"defun\"}]}"))))
    (is (meck:validate 'compile-util))
    (meck:unload 'compile-util)))
+
+(deftest process-textDocument/hover
+  (with-fixture
+   (meck:new 'compile-util)
+   (meck:expect 'compile-util 'compile-file (lambda (_ _) #(ok ())))
+   (let ((new-state (lsp-proc:process-input
+                              (make-compl-example-textDocument/didOpen-request)
+                              (make-lsp-state)
+                              (lambda (x) 'null))))
+     (meck:new 'hover-util)
+     (meck:expect 'hover-util 'get-docu (lambda (_module _func) #(ok "This is documentation")))
+     (is-equal new-state
+               (lsp-proc:process-input
+                         (make-simple-textDocument/hover-request)
+                         new-state
+                         (fake-sender-fun)))
+     (meck:validate 'hover-util)
+     (meck:unload 'hover-util)
+     (meck:unload 'compile-util)
+     (is (expected-result-p
+          #(reply
+            #"{\"id\":99,\"result\":{\"contents\":\"This is documentation\"}}"))))))
 
 (deftest process-shutdown
   (with-fixture
@@ -329,6 +351,14 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 \"id\":99,
 \"method\":\"textDocument/completion\",
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":2,\"triggerCharacter\":\":\"}}
+}")
+
+(defun make-simple-textDocument/hover-request ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/hover\",
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3}}
 }")
 
 (defun make-simple-shutdown-request ()

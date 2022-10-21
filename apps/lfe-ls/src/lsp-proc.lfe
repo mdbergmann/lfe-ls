@@ -70,6 +70,8 @@ Handler functions (like `%on-initialize-req`) are expected to return:
             (%on-textDocument/didSave-req id params state))
            (#"textDocument/completion"
             (%on-textDocument/completion-req id params state))
+           (#"textDocument/hover"
+            (%on-textDocument/hover-req id params state))
            (#"shutdown"
             (%on-shutdown-req id state))
            (#"test-success"
@@ -208,6 +210,22 @@ Handler functions (like `%on-initialize-req`) are expected to return:
            ,state
            null)))))
 
+(defun %on-textDocument/hover-req (id params state)
+  (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
+        (`#(#"position" ,position) (find-tkey #"position" params)))
+    (let ((`(#(#"uri" ,uri)) text-document)
+          (`(#(#"line" ,line) #(#"character" ,character)) position))
+      (let* ((state-documents (lsp-state-documents state))
+             (document (map-get state-documents uri))
+             (text (document-text document)))
+        `#(#(reply ,(%make-hover-response
+                     id
+                     text
+                     (make-position line line
+                                    character character)))
+           ,state
+           null)))))
+
 (defun %on-shutdown-req (id state)
   `#(#(reply ,(%make-result-response id 'null)) ,state null))
 
@@ -230,6 +248,10 @@ Handler functions (like `%on-initialize-req`) are expected to return:
                               (case trigger-char
                                 ('() 'null)
                                 (else (tcdr else)))))))
+
+(defun %make-hover-response (id text position)
+  (%make-result-response id
+                         '(#(#"contents" #"This is documentation"))))
 
 ;; --------------------------------------------------
 
