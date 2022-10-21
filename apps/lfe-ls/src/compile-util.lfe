@@ -22,7 +22,8 @@
 
 (defun %generate-options (project-root)
   "Generates options for the compiler.
-Creates output folder is it doesn't exist. (this should be done on application startup and made available as application env)"
+Creates output folder if it doesn't exist.
+(this should be done on application startup and made available as application env)"
   (let* (((tuple 'ok cwd) (file:get_cwd))
          (out-dir (if (== 0 (length project-root))
                     "./.lfe-ls-out"
