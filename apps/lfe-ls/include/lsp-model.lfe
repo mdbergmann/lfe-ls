@@ -27,10 +27,10 @@
 (defun completion-item-kind-struct () 22)
 
 (defrecord completion-item
-  (module 'null)
-  (func 'null)
+  (module #"")
+  (func #"")
   (arity 'null)
-  (detail 'null)
+  (detail #"")
   (kind 'null))
 
 (defrecord range

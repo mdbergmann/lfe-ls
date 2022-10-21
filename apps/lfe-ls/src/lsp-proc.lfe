@@ -252,16 +252,23 @@ Handler functions (like `%on-initialize-req`) are expected to return:
              completions))
 
 (defun %%completion-item-to-json (citem)
-  '())
-  ;; (let ((insert-text (completion-item-insert-text citem)))
-  ;;   (lists:append
-  ;;    `(#(#"label" ,(completion-item-label citem))
-  ;;      #(#"kind" ,(completion-item-kind citem))
-  ;;      #(#"detail" ,(completion-item-detail citem)))
-  ;;    (if (> (byte_size insert-text) 0)
-  ;;      `(#(#"insertTextFormat" 1)
-  ;;        #(#"insertText" ,insert-text))
-  ;;      '()))))
+  (let ((module (completion-item-module citem))
+        (func (completion-item-func citem))
+        (arity (completion-item-arity citem))
+        (detail (completion-item-detail citem))
+        (kind (completion-item-kind citem)))
+    (let* ((base-label (lfe_io:format1 "~s:~s" `(,module ,func)))
+           (label (list_to_binary
+                   (case arity
+                     ('null base-label)
+                     (ar (lfe_io:format1 "~s ~s"
+                                         `(,base-label
+                                           ,(lfe_io:format1 "arity:~p" `(,ar)))))))))
+      `(#(#"label" ,label)
+        #(#"kind" ,kind)
+        #(#"detail" ,detail)
+        #(#"insertTextFormat" 1)
+        #(#"insertText" ,func)))))
 
 (defun %make-notification (method params)
   `(#(#"jsonrpc" #"2.0")

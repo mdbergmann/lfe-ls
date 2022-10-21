@@ -199,9 +199,9 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
            (lambda (text position trigger-char)
              (case trigger-char
                ('null `(,(make-completion-item
-                          label #"defun"
-                          kind 2
-                          insert-text #"defun")))
+                          module #"lfe-core"
+                          func #"defun"
+                          kind 14)))
                (_ (error "Not expected trigger-char!")))))
      (is-equal new-state
                (lsp-proc:process-input
@@ -212,7 +212,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
      (meck:unload 'completion-util)
      (is (expected-result-p
           #(reply
-            #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2,\"detail\":\"\",\"insertTextFormat\":1,\"insertText\":\"defun\"}]}"))))
+            #"{\"id\":99,\"result\":[{\"label\":\"lfe-core:defun\",\"kind\":14,\"detail\":\"\",\"insertTextFormat\":1,\"insertText\":\"defun\"}]}"))))
    (is (meck:validate 'compile-util))
    (meck:unload 'compile-util)))
 
@@ -230,9 +230,11 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
                     (case trigger-char
                       ('null (error "Not expected trigger-char!"))
                       (#":" `(,(make-completion-item
-                                label #"defun"
-                                kind 2
-                                detail #"foo"))))))
+                                module #"foo"
+                                func #"defun"
+                                detail #"foo"
+                                arity 3
+                                kind 2))))))
      (is-equal new-state
                (lsp-proc:process-input
                 (make-simple-textDocument/completion-request--trigger-char)
@@ -242,7 +244,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
      (meck:unload 'completion-util)
      (is (expected-result-p
           #(reply
-            #"{\"id\":99,\"result\":[{\"label\":\"defun\",\"kind\":2,\"detail\":\"foo\"}]}"))))
+            #"{\"id\":99,\"result\":[{\"label\":\"foo:defun arity:3\",\"kind\":2,\"detail\":\"foo\",\"insertTextFormat\":1,\"insertText\":\"defun\"}]}"))))
    (is (meck:validate 'compile-util))
    (meck:unload 'compile-util)))
 
