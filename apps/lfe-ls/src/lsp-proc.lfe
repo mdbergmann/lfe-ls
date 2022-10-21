@@ -257,18 +257,25 @@ Handler functions (like `%on-initialize-req`) are expected to return:
         (arity (completion-item-arity citem))
         (detail (completion-item-detail citem))
         (kind (completion-item-kind citem)))
-    (let* ((base-label (lfe_io:format1 "~s:~s" `(,module ,func)))
+    (let* ((base-label (case func
+                         ('null (lfe_io:format1 "~s" `(,module)))
+                         (#"" (lfe_io:format1 "~s" `(,module)))
+                         (fn (lfe_io:format1 "~s:~s" `(,module ,fn)))))
            (label (list_to_binary
                    (case arity
                      ('null base-label)
                      (ar (lfe_io:format1 "~s ~s"
                                          `(,base-label
-                                           ,(lfe_io:format1 "arity:~p" `(,ar)))))))))
+                                           ,(lfe_io:format1 "arity:~p" `(,ar))))))))
+           (insertText (case func
+                         ('null module)
+                         (#"" module)
+                         (fn fn))))
       `(#(#"label" ,label)
         #(#"kind" ,kind)
         #(#"detail" ,detail)
         #(#"insertTextFormat" 1)
-        #(#"insertText" ,func)))))
+        #(#"insertText" ,insertText)))))
 
 (defun %make-notification (method params)
   `(#(#"jsonrpc" #"2.0")
