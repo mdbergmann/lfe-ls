@@ -446,4 +446,16 @@ lfe-ls:
       (:arity 1 :function "check_childspecs" :module "supervisor")
       :insertText "check_childspecs(${1:ChildSpecs})" :insertTextFormat 2 :kind 3 :label "check_childspecs/1"))
 
+Erlang-ls:
+[client-request] (id:4) Fri Oct 21 21:16:30 2022:
+(:jsonrpc "2.0" :id 4 :method "textDocument/hover" :params
+          (:textDocument
+           (:uri "file:///Users/mbergmann/Development/MySources/Erlang/firstapp/src/firstapp_sup.erl")
+           :position
+           (:line 16 :character 22)))
+
+[server-reply] (id:4) Fri Oct 21 21:16:30 2022:
+(:id 4 :jsonrpc "2.0" :result
+     (:contents
+      (:kind "markdown" :value "```erlang\nstart_link(SupName, Module, Args)...
 |#

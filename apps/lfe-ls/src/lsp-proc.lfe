@@ -243,7 +243,8 @@ Handler functions (like `%on-initialize-req`) are expected to return:
                        (#(#"resolveProvider" false)
                         #(#"triggerCharacters" (#"(" #":" #"'"))))
                      #(#"textDocumentSync"
-                       (#(#"openClose" true) #(#"change" 1))))))
+                       (#(#"openClose" true) #(#"change" 1)))
+                     #(#"hoverProvider" true))))
 
 (defun %make-completions-result (completions)
   "`completions' is a list of `completion-item' records."
