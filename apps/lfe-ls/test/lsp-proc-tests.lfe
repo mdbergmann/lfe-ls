@@ -257,7 +257,8 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
                               (make-lsp-state)
                               (lambda (x) 'null))))
      (meck:new 'hover-util)
-     (meck:expect 'hover-util 'get-docu (lambda (_module _func) #(ok #"This is documentation")))
+     ;; hover util takes text and position
+     (meck:expect 'hover-util 'get-docu (lambda (_text _position) #(ok #"This is documentation")))
      (is-equal new-state
                (lsp-proc:process-input
                          (make-simple-textDocument/hover-request)
