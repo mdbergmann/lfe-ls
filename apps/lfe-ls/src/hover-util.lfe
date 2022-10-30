@@ -9,7 +9,7 @@
            (`(,module) (lfe_ls_docs:h (binary_to_atom module))))))
 
 (defun %parse-module-or-function (text position)
-  "Parses the global symbol or function name, or the module if a ':' is part of the play.
+  "Parses the function name, or the module if a ':' is part of the play.
 Returns a list of one, or two entries.
 One entry if there is no ':' in the text that was parsed.
 Two entries if there was a ':' in the text that was parsed. The second element is empty if there is no text after the ':'. So generally the first element denotes a global symbol or function if only one element in the returned list. If two elements the first element is a module and the second element is either empty, or denotes a function in the module."
@@ -43,7 +43,7 @@ Two entries if there was a ':' in the text that was parsed. The second element i
                                                  (== value 32))))
                                  (lists:enumerate 1 string))
                         (`#(value ,val) (cl:elt 0 val))
-                        ('false 0))))
+                        (_ 0))))
     (list_to_binary
      (if (== split-index 0)
        ""

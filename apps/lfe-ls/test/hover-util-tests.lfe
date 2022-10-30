@@ -8,12 +8,11 @@
 
 (deftest get-docu
   (meck:new 'lfe_ls_docs)
-  (meck:expect 'lfe_ls_docs 'h (lambda (_module _func)
-                                 #"\n\e[;1m\tio\e[0m\n\n  This module provides an"))
+  (meck:expect 'lfe_ls_docs 'h (lambda (module func)
+                                 (list_to_binary
+                                  (lists:flatten (lfe_io:format1 "~s:~s" `(,module ,func))))))
   (let (((tuple 'ok doc) (hover-util:get-docu #"(io:format dkfjh" #(position 0 1))))
-    (is-equal #"  This module provides an"
-              (string:prefix doc #"\n\e[;1m\tio\e[0m\n\n")))
+    (is-equal #"io:format" doc))
 
   (is (meck:validate 'lfe_ls_docs))
-  (meck:unload 'lfe_ls_docs)
-  )
+  (meck:unload 'lfe_ls_docs))
