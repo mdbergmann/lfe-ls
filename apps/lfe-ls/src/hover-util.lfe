@@ -48,6 +48,6 @@ Two entries if there was a ':' in the text that was parsed. The second element i
                         (_ 0))))
     (list_to_binary
      (if (== split-index 0)
-       ""
+       (string:sub_string string 1)
        (string:sub_string string 1 (- split-index 1))))))
     
