@@ -92,20 +92,20 @@ h(Mod, Func, Arity) ->
     end.
 
 format_doc({error,_}=Error) -> Error;
-format_doc(Docs) ->
-    {match,Lines} = re:run(Docs, "(.+\n|\n)",
-                           [unicode,global,{capture,all_but_first,binary}]),
+format_doc(Docs) -> list_to_binary(Docs).
+    %% {match,Lines} = re:run(Docs, "(.+\n|\n)",
+    %%                        [unicode,global,{capture,all_but_first,binary}]),
 %%    Pfun = fun (Line) ->
            %%         io:put_chars(Line),
            %%         1                            %One line
            %% end,
     %paged_output(Pfun, Lines),
-    io:format(?RED("~*c")++"\n", [60,$_]),
-    lists:foreach(fun (Line) ->
-                      io:put_chars(Line)
-                      end,
-                 Lines),
-    ok.
+    %% io:format(?RED("~*c")++"\n", [60,$_]),
+    %% lists:foreach(fun (Line) ->
+    %%                   io:put_chars(Line)
+    %%                   end,
+    %%              Lines),
+    %% ok.
 
 
 get_module_doc(Mod, #docs_v1{format = ?NATIVE_FORMAT}=Docs) ->
