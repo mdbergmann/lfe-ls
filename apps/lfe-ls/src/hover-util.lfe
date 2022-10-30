@@ -4,11 +4,13 @@
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 (defun get-docu (text position)
-  `#(ok ,(case (%parse-module-or-function text position)
-           ('(#"") #"")
-           (`(,module ,func) (lfe_ls_docs:h (binary_to_atom module) (binary_to_atom func)))
-           (`(,module) (lfe_ls_docs:h (binary_to_atom module)))
-           )))
+  (case
+      (case (%parse-module-or-function text position)
+        ('(#"") #"")
+        (`(,module ,func) (lfe_ls_docs:h (binary_to_atom module) (binary_to_atom func)))
+        (`(,module) (lfe_ls_docs:h (binary_to_atom module))))
+    (`#(error ,err) `#(error ,err))
+    (doc `#(ok ,doc))))
 
 (defun %parse-module-or-function (text position)
   "Parses the function name, or the module if a ':' is part of the play.

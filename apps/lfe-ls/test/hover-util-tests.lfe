@@ -14,7 +14,6 @@
                                          (lfe_io:format1 "~s:~s" `(,module ,func))))))
   (let (((tuple 'ok doc) (hover-util:get-docu #"(io:format dkfjh" #(position 0 1))))
     (is-equal #"io:format" doc))
-
   (is (meck:validate 'lfe_ls_docs))
   (meck:unload 'lfe_ls_docs))
 
@@ -26,7 +25,6 @@
                                          (lfe_io:format1 "~s:~s" `(,module ,func))))))
   (let (((tuple 'ok doc) (hover-util:get-docu #"(io:format dkfjh" #(position 0 4))))
     (is-equal #"io:format" doc))
-
   (is (meck:validate 'lfe_ls_docs))
   (meck:unload 'lfe_ls_docs))
 
@@ -38,7 +36,6 @@
                                          (lfe_io:format1 "~s:~s" `(,module ,func))))))
   (let (((tuple 'ok doc) (hover-util:get-docu #"io:format" #(position 0 4))))
     (is-equal #"io:format" doc))
-
   (is (meck:validate 'lfe_ls_docs))
   (meck:unload 'lfe_ls_docs))
 
@@ -50,7 +47,13 @@
                                          (lfe_io:format1 "~s:~s" `(,module ,func))))))
   (let (((tuple 'ok doc) (hover-util:get-docu #"    io:format    " #(position 0 8))))
     (is-equal #"io:format" doc))
+  (is (meck:validate 'lfe_ls_docs))
+  (meck:unload 'lfe_ls_docs))
 
+(deftest get-docu--unrecognized-module
+  (meck:new 'lfe_ls_docs)
+  (meck:expect 'lfe_ls_docs 'h (lambda (_) '#(error foo)))
+  (is-equal '#(error foo) (hover-util:get-docu #"  dkfjh   " #(position 0 3)))
   (is (meck:validate 'lfe_ls_docs))
   (meck:unload 'lfe_ls_docs))
 
