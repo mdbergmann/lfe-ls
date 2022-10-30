@@ -5,8 +5,10 @@
 
 (defun get-docu (text position)
   `#(ok ,(case (%parse-module-or-function text position)
+           ('(#"") #"")
            (`(,module ,func) (lfe_ls_docs:h (binary_to_atom module) (binary_to_atom func)))
-           (`(,module) (lfe_ls_docs:h (binary_to_atom module))))))
+           (`(,module) (lfe_ls_docs:h (binary_to_atom module)))
+           )))
 
 (defun %parse-module-or-function (text position)
   "Parses the function name, or the module if a ':' is part of the play.
@@ -26,11 +28,11 @@ Two entries if there was a ':' in the text that was parsed. The second element i
                     (`#((,_ ,a) (,_ ,b))
                      (if (< (string:length a) (string:length b))
                        a b)))))
-    (logger:debug "text: ~p" `(,text))
-    (logger:debug "lines: ~p" `(,(length lines)))
-    (logger:debug "line: ~p" `(,line))
-    (logger:debug "line-pos: ~p" `(,line-pos))
-    (logger:debug "line-substr: ~p, tmp-mod: ~p, char-pos: ~p" `(,line-substr ,tmp-mod ,char-pos))
+    (logger:notice "text: ~p" `(,text))
+    (logger:notice "lines: ~p" `(,(length lines)))
+    (logger:notice "line: ~p" `(,line))
+    (logger:notice "line-pos: ~p" `(,line-pos))
+    (logger:notice "line-substr: ~p, tmp-mod: ~p, char-pos: ~p" `(,line-substr ,tmp-mod ,char-pos))
     (string:split tmp-mod #":")))
 
 (defun %substr-to-next-space (line char-pos)
