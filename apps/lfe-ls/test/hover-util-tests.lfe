@@ -3,9 +3,9 @@
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
+(include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 
-(deftest is
-  (is 'true)
-  (is (not 'false))
-  (is (not (not 'true))))
+(deftest get-docu
+  (is-equal `#(ok #"") (hover-util:get-docu #"foo:bar" #(position 0 1)))
+  )
