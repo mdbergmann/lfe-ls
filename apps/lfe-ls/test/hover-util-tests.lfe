@@ -10,7 +10,8 @@
   (meck:new 'lfe_ls_docs)
   (meck:expect 'lfe_ls_docs 'h (lambda (module func)
                                  (list_to_binary
-                                  (lists:flatten (lfe_io:format1 "~s:~s" `(,module ,func))))))
+                                  (lists:flatten
+                                         (lfe_io:format1 "~s:~s" `(,module ,func))))))
   (let (((tuple 'ok doc) (hover-util:get-docu #"(io:format dkfjh" #(position 0 1))))
     (is-equal #"io:format" doc))
 
