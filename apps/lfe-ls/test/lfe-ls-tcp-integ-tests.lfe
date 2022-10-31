@@ -23,15 +23,7 @@
    (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
      (gen_tcp:send socket (make-simple-initialize-request))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
-       (is-equal "Content-Length: 198\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"hoverProvider\":true,\"textDocumentSync\":{\"openClose\":true,\"change\":1}},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))
-     (gen_tcp:close socket))))
-
-(deftest process-completion-message
-  (with-fixture
-   (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
-     (gen_tcp:send socket (make-simple-textDocument/completion-request))
-     (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
-       (is (> (string:length response) 0)))
+       (is-equal "Content-Length: 219\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1},\"hoverProvider\":true},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))
      (gen_tcp:close socket))))
 
 (deftest process-didSave-message
@@ -48,6 +40,14 @@
        (is-not-equal 'nomatch (string:find response "\"method\":\"textDocument/publishDiagnostics\""))
        (is-not-equal 'nomatch (string:find response "\"diagnostics\":[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":0}},\"severity\":1,\"source\":\"lfe_lint\",\"message\":\"#(undefined_function #(my-fun 1))\"}]"))
        (gen_tcp:close socket)))))
+
+(deftest process-completion-message
+  (with-fixture
+   (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
+     (gen_tcp:send socket (make-simple-textDocument/completion-request))
+     (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
+       (is (> (string:length response) 0)))
+     (gen_tcp:close socket))))
 
 (deftest process-completion-message-2
   (with-fixture

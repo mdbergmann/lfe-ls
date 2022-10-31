@@ -49,7 +49,7 @@
 This one will just push the computed result to our fake-lsp-resp-sender actor"
   `(let ((me (self)))
      (lambda (lsp-resp)
-       (logger:notice "putting to receiver: ~p" `(,lsp-resp))
+       ;;(logger:notice "putting to receiver: ~p" `(,lsp-resp))
        (! receiver `#(,me put ,lsp-resp)))))
 
 (deftest test-lsp-receiver
