@@ -17,14 +17,14 @@ It is largely work in progress. The following LSP functionality is implemented:
 - `textDocument/didSave` notification
 - `textDocument/completion` request/response implements global symbols and loaded modules as well as module functions.
 - `textDocument/publishDiagnostics` notification to push compile diagnostics on saving a file.
+- `textDocument/hover` request/response that shows module/function documentation
 
 `didOpen` and `didSave` will compile the source file on the server to provide diagnostics to the client.
 However, this does not replace the `C-c-k` key sequence to compile the and reload the module in the REPL in order to take the changes into effect.
 
 Planned further support is:
 
-- hover support for showing documentation (via eldoc in Eglot).
-- showing documentation on completions
+- showing signature support for functions
 
 Auto-completion is rudimentary right now. It completes global symbols/atoms, functions/macros and functions on a module basis by parsing the text and looking for ':' character which indicates completing for a module.
 There is a lot of room for improvement. I.e.: functions within a module could be parsed from the text, or variables within a let.
