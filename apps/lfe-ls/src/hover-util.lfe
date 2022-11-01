@@ -24,7 +24,7 @@ Two entries if there was a ':' in the text that was parsed. The second element i
          (lines (string:split text #"\n" 'all))
          (line (cl:elt line-pos lines))
          (line-substr (%substr-to-right-delim line char-pos))
-         (captured-token (%capture-token line-substr))
+         (captured-token (%substr-to-left-delim line-substr))
          (token-start-pos (%find-token-start-pos line captured-token)))
     ;; (logger:notice "text: ~p" `(,text))
     ;; (logger:notice "lines: ~p" `(,(length lines)))
@@ -56,7 +56,7 @@ Then this function returns: `  (io:format`"
        (string:sub_string string 1)
        (string:sub_string string 1 (- split-index 1))))))
 
-(defun %capture-token (line-substr)
+(defun %substr-to-left-delim (line-substr)
   (case `#(,(string:split line-substr #" " 'trailing)
            ,(string:split line-substr #"(" 'trailing))
     (`#((,_) (,_)) line-substr)
