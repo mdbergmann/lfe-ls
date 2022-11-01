@@ -4,6 +4,8 @@
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
 
 (defun get-docu (text position)
+  "Retrieves the Erlang EEP-48 documentation (if present) for the recognized token in `text` at `position`.
+The return is (tuple 'ok binary) for success, or (tuple 'error reason) on error."
   (case
       (case (%parse-module-or-function text position)
         ('(#"") #"")
@@ -22,14 +24,7 @@ Two entries if there was a ':' in the text that was parsed. The second element i
          (lines (string:split text #"\n" 'all))
          (line (cl:elt line-pos lines))
          (line-substr (%substr-to-right-delim line char-pos))
-         (captured-token (case `#(,(string:split line-substr #" " 'trailing)
-                                  ,(string:split line-substr #"(" 'trailing))
-                           (`#((,_) (,_)) line-substr)
-                           (`#((,_) (,_ ,b)) b)
-                           (`#((,_ ,a) (,_)) a)
-                           (`#((,_ ,a) (,_ ,b))
-                            (if (< (string:length a) (string:length b))
-                              a b))))
+         (captured-token (%capture-token line-substr))
          (token-start-pos (%find-token-start-pos line captured-token)))
     ;; (logger:notice "text: ~p" `(,text))
     ;; (logger:notice "lines: ~p" `(,(length lines)))
@@ -60,6 +55,16 @@ Then this function returns: `  (io:format`"
      (if (== split-index 'not-found)
        (string:sub_string string 1)
        (string:sub_string string 1 (- split-index 1))))))
+
+(defun %capture-token (line-substr)
+  (case `#(,(string:split line-substr #" " 'trailing)
+           ,(string:split line-substr #"(" 'trailing))
+    (`#((,_) (,_)) line-substr)
+    (`#((,_) (,_ ,b)) b)
+    (`#((,_ ,a) (,_)) a)
+    (`#((,_ ,a) (,_ ,b))
+     (if (< (string:length a) (string:length b))
+       a b))))
 
 (defun %find-token-start-pos (line token)
   (let ((prefix (case (string:split line token 'leading)
