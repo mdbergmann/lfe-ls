@@ -61,7 +61,11 @@ will automatically be found.
 In order to allow lfe-ls to work with a workspace folder it is adviceable to create a git repository in the folder your are operating. That will Emacs to recognize the folder as a project.
 
 
-![](docs/lfe-ls.gif)
+![](docs/start-eglot.gif)
+
+![](docs/completion.gif)
+
+![](docs/hover.gif)
 
 ## Build [&#x219F;](#table-of-contents)
 

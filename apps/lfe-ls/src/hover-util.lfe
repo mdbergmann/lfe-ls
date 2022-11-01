@@ -14,6 +14,9 @@ The return is (tuple 'ok binary) for success, or (tuple 'error reason) on error.
     (`#(error ,err) `#(error ,err))
     (doc `#(ok ,doc))))
 
+(defun print (text)
+  (io:format ))
+
 (defun %parse-module-or-function (text position)
   "Parses the function name, or the module if a ':' is part of the play.
 Returns a list of one, or two entries.
