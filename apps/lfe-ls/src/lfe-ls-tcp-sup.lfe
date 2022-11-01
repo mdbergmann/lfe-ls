@@ -19,7 +19,7 @@
 (defun supervisor-opts () '())
 (defun sup-flags ()
   `#M(strategy one_for_one
-      intensity 3
+      intensity 10 ;; relevant for tests
       period 60))
 
 ;;; -------------------------
