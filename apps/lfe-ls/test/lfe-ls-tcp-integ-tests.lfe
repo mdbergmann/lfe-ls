@@ -83,56 +83,42 @@
   #"Content-Length: 183\r\n\r\n{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"initialize\",\"params\":{\"processId\":null,\"clientInfo\":{\"name\":\"eglot\"},\"rootPath\":\"/tmp\",\"rootUri\":null,\"initializationOptions\":{},\"capabilities\":{}}}")
 
 (defun make-simple-textDocument/didOpen-request (file)
-  (let* ((content (lfe_io:format1 "{
+  (make-request (lfe_io:format1 "{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"textDocument/didOpen\",
 \"params\":{\"textDocument\":{\"uri\":\"file://~s\",\"version\":1,\"languageId\":\"lfe\",\"text\":\"the-document-text\"}}
-}" `(,file)))
-         (content-len (string:length content))
-         (full-content (list_to_binary
-                        (lfe_io:format1 "Content-Length: ~p\r\n\r\n~s"
-                                `(,content-len ,content)))))
-    full-content))
+}" `(,file))))
 
 (defun make-simple-textDocument/completion-request (file)
-  (let* ((content (lfe_io:format1 "{
+  (make-request (lfe_io:format1 "{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"textDocument/completion\",
 \"params\":{\"textDocument\":{\"uri\":\"file://~s\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":1}}
-}" `(,file)))
-         (content-len (string:length content))
-         (full-content (list_to_binary
-                        (lfe_io:format1 "Content-Length: ~p\r\n\r\n~s"
-                                `(,content-len ,content)))))
-    full-content))
-    
+}" `(,file))))
 
 (defun make-simple-textDocument/didSave-request (file)
-  (let* ((content (lfe_io:format1 "{
+  (make-request (lfe_io:format1 "{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"textDocument/didSave\",
 \"params\":{\"textDocument\":{\"uri\":\"file://~s\"}}
-}" `(,file)))
-         (content-len (string:length content))
-         (full-content (list_to_binary
-                        (lfe_io:format1 "Content-Length: ~p\r\n\r\n~s"
-                                        `(,content-len ,content)))))
-    full-content))
+}" `(,file))))
 
 (defun make-simple-textDocument/hover-request (file)
-  (let* ((content (lfe_io:format1 "{
+  (make-request (lfe_io:format1 "{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"textDocument/hover\",
 \"params\":{\"textDocument\":{\"uri\":\"file://~s\"},\"position\":{\"line\":0,\"character\":3}}
-}" `(,file)))
-         (content-len (string:length content))
+}" `(,file))))
+
+(defun make-request (req-content)
+  (let* ((content-len (string:length req-content))
          (full-content (list_to_binary
                         (lfe_io:format1 "Content-Length: ~p\r\n\r\n~s"
-                                        `(,content-len ,content)))))
+                                `(,content-len ,req-content)))))
     full-content))
 
 #|
