@@ -21,23 +21,30 @@ Two entries if there was a ':' in the text that was parsed. The second element i
          (char-pos (position-character position))
          (lines (string:split text #"\n" 'all))
          (line (cl:elt line-pos lines))
-         (line-substr (%substr-to-next-space line char-pos))
-         (tmp-mod (case `#(,(string:split line-substr #" " 'trailing)
-                           ,(string:split line-substr #"(" 'trailing))
-                    (`#((,_) (,_)) line-substr)
-                    (`#((,_) (,_ ,b)) b)
-                    (`#((,_ ,a) (,_)) a)
-                    (`#((,_ ,a) (,_ ,b))
-                     (if (< (string:length a) (string:length b))
-                       a b)))))
+         (line-substr (%substr-to-right-delim line char-pos))
+         (captured-token (case `#(,(string:split line-substr #" " 'trailing)
+                                  ,(string:split line-substr #"(" 'trailing))
+                           (`#((,_) (,_)) line-substr)
+                           (`#((,_) (,_ ,b)) b)
+                           (`#((,_ ,a) (,_)) a)
+                           (`#((,_ ,a) (,_ ,b))
+                            (if (< (string:length a) (string:length b))
+                              a b))))
+         (token-start-pos (%find-token-start-pos line captured-token)))
     ;; (logger:notice "text: ~p" `(,text))
     ;; (logger:notice "lines: ~p" `(,(length lines)))
     ;; (logger:notice "line: ~p" `(,line))
     ;; (logger:notice "line-pos: ~p" `(,line-pos))
-    ;; (logger:notice "line-substr: ~p, tmp-mod: ~p, char-pos: ~p" `(,line-substr ,tmp-mod ,char-pos))
-    (string:split tmp-mod #":")))
+    ;; (logger:notice "line-substr: ~p, captured-token: ~p, char-pos: ~p" `(,line-substr ,captured-token ,char-pos))
+    (cond
+     ((< char-pos token-start-pos) '(#""))
+     (else (string:split captured-token #":")))))
 
-(defun %substr-to-next-space (line char-pos)
+(defun %substr-to-right-delim (line char-pos)
+  "Makes a sub-string from 0 to the next right side delimiter whose index is > `char-pos`.
+Delimiters are:  ' ' or ')'
+I.e. line = `  (io:format \"foo\" '())`
+Then this function returns: `  (io:format`"
   (let* ((string (binary_to_list line))
          (split-index (case
                           (lists:search (lambda (x)
@@ -48,9 +55,14 @@ Two entries if there was a ':' in the text that was parsed. The second element i
                                                      (== value (hd ")"))))))
                                  (lists:enumerate 1 string))
                         (`#(value ,val) (cl:elt 0 val))
-                        (_ 0))))
+                        (_ 'not-found))))
     (list_to_binary
-     (if (== split-index 0)
+     (if (== split-index 'not-found)
        (string:sub_string string 1)
        (string:sub_string string 1 (- split-index 1))))))
-    
+
+(defun %find-token-start-pos (line token)
+  (let ((prefix (case (string:split line token 'leading)
+                  (`(,prefix ,_) prefix)
+                  (`(,prefix) prefix))))
+    (string:length prefix)))

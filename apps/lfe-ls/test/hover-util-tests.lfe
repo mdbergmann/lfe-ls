@@ -72,6 +72,14 @@
   (let (((tuple 'ok doc) (hover-util:get-docu #"  io:format dkfjh" #(position 0 1))))
     (is-equal #"" doc)))
 
+(deftest get-docu--char-pos--out-of-token-range-1
+  (let (((tuple 'ok doc) (hover-util:get-docu #",(io:format dkfjh" #(position 0 0))))
+    (is-equal #"" doc)))
+
+(deftest get-docu--char-pos--out-of-token-range-2
+  (let (((tuple 'ok doc) (hover-util:get-docu #",(io:format dkfjh" #(position 0 1))))
+    (is-equal #"" doc)))
+
 (deftest get-docu--empty-text
   (let (((tuple 'ok doc) (hover-util:get-docu #"" #(position 0 0))))
     (is-equal #"" doc)))
