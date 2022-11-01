@@ -26,14 +26,24 @@
        (is-equal "Content-Length: 219\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1},\"hoverProvider\":true},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))
      (gen_tcp:close socket))))
 
+(deftest process-completion-message
+  (with-fixture
+   (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
+     (gen_tcp:send socket (make-simple-textDocument/completion-request "/foo.lfe"))
+     (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
+       (is (> (string:length response) 0)))
+     (gen_tcp:close socket))))
+
 (deftest process-didSave-message
   (with-fixture
    (let* ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false))))
           (`#(ok ,cwd) (file:get_cwd))
+          ;; we need a file for the compilation process (diagnostics that are sent async)
           (file (++ cwd "/compile-tmpls/error-no-include.lfe")))
      (gen_tcp:send socket (make-simple-initialize-request))
      (gen_tcp:recv socket 0)
      (gen_tcp:send socket (make-simple-textDocument/didOpen-request file))
+     (gen_tcp:recv socket 0)
      (gen_tcp:send socket (make-simple-textDocument/didSave-request file))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
        ;;(logger:notice "response: ~p" `(,response))
@@ -41,19 +51,30 @@
        (is-not-equal 'nomatch (string:find response "\"diagnostics\":[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":0}},\"severity\":1,\"source\":\"lfe_lint\",\"message\":\"#(undefined_function #(my-fun 1))\"}]"))
        (gen_tcp:close socket)))))
 
-(deftest process-completion-message
+(deftest process-completion-message-2
   (with-fixture
-   (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
-     (gen_tcp:send socket (make-simple-textDocument/completion-request))
+   (let* ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false))))
+          (`#(ok ,cwd) (file:get_cwd))
+          (file (++ cwd "/compile-tmpls/error-no-include.lfe")))
+     (gen_tcp:send socket (make-simple-initialize-request))
+     (gen_tcp:recv socket 0)
+     (gen_tcp:send socket (make-simple-textDocument/didOpen-request file))
+     (gen_tcp:recv socket 0)
+     (gen_tcp:send socket (make-simple-textDocument/completion-request file))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
        (is (> (string:length response) 0)))
      (gen_tcp:close socket))))
 
-(deftest process-completion-message-2
+(deftest process-hover
   (with-fixture
-   (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
-     (gen_tcp:send socket (make-simple-textDocument/didOpen-request "/foobar.lfe"))
-     (gen_tcp:send socket (make-simple-textDocument/completion-request))
+   (let* ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false))))
+          (`#(ok ,cwd) (file:get_cwd))
+          (file (++ cwd "/compile-tmpls/error-no-include.lfe")))
+     (gen_tcp:send socket (make-simple-initialize-request))
+     (gen_tcp:recv socket 0)
+     (gen_tcp:send socket (make-simple-textDocument/didOpen-request file))
+     (gen_tcp:recv socket 0)
+     (gen_tcp:send socket (make-simple-textDocument/hover-request file))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
        (is (> (string:length response) 0)))
      (gen_tcp:close socket))))
@@ -71,16 +92,22 @@
          (content-len (string:length content))
          (full-content (list_to_binary
                         (lfe_io:format1 "Content-Length: ~p\r\n\r\n~s"
-                                        `(,content-len ,content)))))
+                                `(,content-len ,content)))))
     full-content))
 
-(defun make-simple-textDocument/completion-request ()
-  #"Content-Length: 184\r\n\r\n{
+(defun make-simple-textDocument/completion-request (file)
+  (let* ((content (lfe_io:format1 "{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"textDocument/completion\",
-\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":1}}
-}")
+\"params\":{\"textDocument\":{\"uri\":\"file://~s\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":1}}
+}" `(,file)))
+         (content-len (string:length content))
+         (full-content (list_to_binary
+                        (lfe_io:format1 "Content-Length: ~p\r\n\r\n~s"
+                                `(,content-len ,content)))))
+    full-content))
+    
 
 (defun make-simple-textDocument/didSave-request (file)
   (let* ((content (lfe_io:format1 "{
@@ -88,6 +115,19 @@
 \"id\":99,
 \"method\":\"textDocument/didSave\",
 \"params\":{\"textDocument\":{\"uri\":\"file://~s\"}}
+}" `(,file)))
+         (content-len (string:length content))
+         (full-content (list_to_binary
+                        (lfe_io:format1 "Content-Length: ~p\r\n\r\n~s"
+                                        `(,content-len ,content)))))
+    full-content))
+
+(defun make-simple-textDocument/hover-request (file)
+  (let* ((content (lfe_io:format1 "{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/hover\",
+\"params\":{\"textDocument\":{\"uri\":\"file://~s\"},\"position\":{\"line\":0,\"character\":3}}
 }" `(,file)))
          (content-len (string:length content))
          (full-content (list_to_binary
