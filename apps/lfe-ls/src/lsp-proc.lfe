@@ -100,6 +100,38 @@ Handler functions (like `%on-initialize-req`) are expected to return:
     ;; add code paths for all files under 'rootpath/_build/default/lib/*/ebin' +
     ;; 'rootpath/_build/test/lib/*/ebin'
     ;; for folder that are no symlinks
+
+    (flet ((collect-dirs (root-dir)
+                         (case (file:list_dir root-dir)
+                           (`#(ok ,dirs)
+                            (lists:map (lambda (dir)
+                                         (filename:join root-dir dir)) dirs))
+                           (`#(error ,err)
+                            (logger:warning "Collecting dirs folders: ~p" `(,err))
+                            '()))))
+    
+      (let* ((libs-root (filename:join rootpath "_build/default/lib"))
+             (test-libs-root (filename:join rootpath "_build/test/lib"))
+             (libs-dirs (collect-dirs libs-root))
+             (test-libs-dirs (collect-dirs test-libs-root))
+             (all-libs-dirs (lists:append `(,libs-dirs ,test-libs-dirs)))
+             (filtered-libs-dirs (lists:filter #'filelib:is_dir/1 all-libs-dirs))
+             (ebin-dirs (lists:map (lambda (dir)
+                                     (filename:join dir "ebin"))
+                               filtered-libs-dirs))
+             (final-dirs (cons
+                          (filename:join `(,rootpath ".lfe-ls-out"))
+                          ebin-dirs)))
+        (logger:notice "Adding paths: ~p" `(,final-dirs))
+        ;; (lists:foreach (lambda (dir)
+        ;;                  (case (code:add_patha dir)
+        ;;                    (`#(error ,err)
+        ;;                     (logger:warning "Can't load path: ~p, err: ~p" `(,dir ,err)))
+        ;;                    (_
+        ;;                     (logger:notice "Path loaded: ~p" `(,dir)))))
+        ;;        final-dirs)))
+        (code:add_pathsa final-dirs)))
+
     `#(#(reply ,(%make-result-response id (%make-initialize-result params)))
        ,(clj:-> state
              (set-lsp-state-initialized 'true)
