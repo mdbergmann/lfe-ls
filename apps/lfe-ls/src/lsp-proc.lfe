@@ -112,16 +112,13 @@ Handler functions (like `%on-initialize-req`) are expected to return:
     
       (let* ((libs-root (filename:join rootpath "_build/default/lib"))
              (test-libs-root (filename:join rootpath "_build/test/lib"))
-             (libs-dirs (collect-dirs libs-root))
-             (test-libs-dirs (collect-dirs test-libs-root))
-             (all-libs-dirs (lists:append `(,libs-dirs ,test-libs-dirs)))
-             (filtered-libs-dirs (lists:filter #'filelib:is_dir/1 all-libs-dirs))
-             (ebin-dirs (lists:map (lambda (dir)
-                                     (filename:join dir "ebin"))
-                               filtered-libs-dirs))
-             (final-dirs (cons
-                          (filename:join `(,rootpath ".lfe-ls-out"))
-                          ebin-dirs)))
+             (all-libs-dirs (lists:append
+                                   (collect-dirs libs-root)
+                                   (collect-dirs test-libs-root)))
+             (final-dirs (clj:->> all-libs-dirs
+                              (lists:filter #'filelib:is_dir/1)
+                              (lists:map (lambda (dir) (filename:join dir "ebin")))
+                              (lists:append `(,(filename:join `(,rootpath ".lfe-ls-out")))))))
         (logger:notice "Adding paths: ~p" `(,final-dirs))
         ;; (lists:foreach (lambda (dir)
         ;;                  (case (code:add_patha dir)
