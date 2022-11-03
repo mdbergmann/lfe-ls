@@ -97,6 +97,9 @@ Handler functions (like `%on-initialize-req`) are expected to return:
 
 (defun %on-initialize-req (id params state)
   (let ((`#(#"rootPath" ,rootpath) (find-tkey #"rootPath" params)))
+    ;; add code paths for all files under 'rootpath/_build/default/lib/*/ebin' +
+    ;; 'rootpath/_build/test/lib/*/ebin'
+    ;; for folder that are no symlinks
     `#(#(reply ,(%make-result-response id (%make-initialize-result params)))
        ,(clj:-> state
              (set-lsp-state-initialized 'true)
