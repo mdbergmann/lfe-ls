@@ -100,14 +100,13 @@ Handler functions (like `%on-initialize-req`) are expected to return:
     ;; add code paths for all files under 'rootpath/_build/default/lib/*/ebin' +
     ;; 'rootpath/_build/test/lib/*/ebin'
     ;; for folder that are no symlinks
-
     (flet ((collect-dirs (root-dir)
                          (case (file:list_dir root-dir)
                            (`#(ok ,dirs)
                             (lists:map (lambda (dir)
                                          (filename:join root-dir dir)) dirs))
                            (`#(error ,err)
-                            (logger:warning "Collecting dirs folders: ~p" `(,err))
+                            (logger:warning "Collecting folders: ~p" `(,err))
                             '()))))
     
       (let* ((libs-root (filename:join rootpath "_build/default/lib"))
@@ -119,15 +118,13 @@ Handler functions (like `%on-initialize-req`) are expected to return:
                               (lists:filter #'filelib:is_dir/1)
                               (lists:map (lambda (dir) (filename:join dir "ebin")))
                               (lists:append `(,(filename:join `(,rootpath ".lfe-ls-out")))))))
-        (logger:notice "Adding paths: ~p" `(,final-dirs))
-        ;; (lists:foreach (lambda (dir)
-        ;;                  (case (code:add_patha dir)
-        ;;                    (`#(error ,err)
-        ;;                     (logger:warning "Can't load path: ~p, err: ~p" `(,dir ,err)))
-        ;;                    (_
-        ;;                     (logger:notice "Path loaded: ~p" `(,dir)))))
-        ;;        final-dirs)))
-        (code:add_pathsa final-dirs)))
+        (lists:foreach (lambda (dir)
+                         (case (code:add_patha (binary_to_list dir))
+                           (`#(error ,err)
+                            (logger:warning "Can't load path: ~p, err: ~p" `(,dir ,err)))
+                           (_
+                            (logger:info "Path loaded: ~p" `(,dir)))))
+               final-dirs)))
 
     `#(#(reply ,(%make-result-response id (%make-initialize-result params)))
        ,(clj:-> state
