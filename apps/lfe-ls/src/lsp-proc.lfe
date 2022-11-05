@@ -97,35 +97,8 @@ Handler functions (like `%on-initialize-req`) are expected to return:
 
 (defun %on-initialize-req (id params state)
   (let ((`#(#"rootPath" ,rootpath) (find-tkey #"rootPath" params)))
-    ;; add code paths for all files under 'rootpath/_build/default/lib/*/ebin' +
-    ;; 'rootpath/_build/test/lib/*/ebin'
-    ;; for folder that are no symlinks
-    (flet ((collect-dirs (root-dir)
-                         (case (file:list_dir root-dir)
-                           (`#(ok ,dirs)
-                            (lists:map (lambda (dir)
-                                         (filename:join root-dir dir)) dirs))
-                           (`#(error ,err)
-                            (logger:warning "Collecting folders: ~p" `(,err))
-                            '()))))
+    (code-util:add-code-paths rootpath)
     
-      (let* ((libs-root (filename:join rootpath "_build/default/lib"))
-             (test-libs-root (filename:join rootpath "_build/test/lib"))
-             (all-libs-dirs (lists:append
-                                   (collect-dirs libs-root)
-                                   (collect-dirs test-libs-root)))
-             (final-dirs (clj:->> all-libs-dirs
-                              (lists:filter #'filelib:is_dir/1)
-                              (lists:map (lambda (dir) (filename:join dir "ebin")))
-                              (lists:append `(,(filename:join `(,rootpath ".lfe-ls-out")))))))
-        (lists:foreach (lambda (dir)
-                         (case (code:add_patha (binary_to_list dir))
-                           (`#(error ,err)
-                            (logger:warning "Can't load path: ~p, err: ~p" `(,dir ,err)))
-                           (_
-                            (logger:info "Path loaded: ~p" `(,dir)))))
-               final-dirs)))
-
     `#(#(reply ,(%make-result-response id (%make-initialize-result params)))
        ,(clj:-> state
              (set-lsp-state-initialized 'true)
