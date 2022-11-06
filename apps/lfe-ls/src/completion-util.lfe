@@ -172,8 +172,10 @@ But for right now there is no better place."
                           (fn (case arity
                                 ('null fn)
                                 (0 fn)
-                                (1 (lfe_io:format1 "~s ~s" `(,fn "${1:arg1}")))
-                                (2 (lfe_io:format1 "~s ~s ~s" `(,fn "${1:arg1}" "${2:arg2}")))
+                                (n (lists:foldl (lambda (i acc)
+                                                  (lfe_io:format1 "~s ${~p:arg~p}" `(,acc ,i ,i)))
+                                          fn
+                                          (lists:seq 1 n)))
                                 )))))
            (result `(#(#"label" ,label)
                      #(#"kind" ,kind)
