@@ -275,37 +275,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
 
 (defun %make-completions-result (completions)
   "`completions' is a list of `completion-item' records."
-  (lists:map (lambda (citem)
-               (%%completion-item-to-json citem))
-             completions))
-
-(defun %%completion-item-to-json (citem)
-  (let ((module (completion-item-module citem))
-        (func (completion-item-func citem))
-        (arity (completion-item-arity citem))
-        (detail (completion-item-detail citem))
-        (kind (completion-item-kind citem)))
-    (let* ((base-label (case func
-                         ('null (lfe_io:format1 "~s" `(,module)))
-                         (#"" (lfe_io:format1 "~s" `(,module)))
-                         (fn (lfe_io:format1 "~s:~s" `(,module ,fn)))))
-           (label (list_to_binary
-                   (case arity
-                     ('null base-label)
-                     (ar (lfe_io:format1 "~s~s"
-                                         `(,base-label
-                                           ,(lfe_io:format1 "/~p" `(,ar))))))))
-           (insertText (case func
-                         ('null module)
-                         (#"" module)
-                         (fn fn)))
-           (result `(#(#"label" ,label)
-                     #(#"kind" ,kind)
-                     #(#"detail" ,detail)
-                     #(#"insertTextFormat" 2)
-                     #(#"insertText" ,insertText))))
-      ;;(logger:notice "result: ~p" `(,result))
-      result)))
+  (lists:map #'completion-util:to-json/1 completions))
 
 (defun %make-notification (method params)
   `(#(#"jsonrpc" #"2.0")

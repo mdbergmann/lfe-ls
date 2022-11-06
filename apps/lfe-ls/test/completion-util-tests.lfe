@@ -10,9 +10,9 @@
                            #"("
                            #"("))))
     ;;(logger:notice "~p" `(,funs))
-    (is-equal `#(completion-item #"application" null null null 9)
+    (is-equal `#(completion-item #"application" #"" null #"" 9)
               (car funs))
-    (is-equal `#(completion-item #"zlib" null null null 9)
+    (is-equal `#(completion-item #"zlib" #"" null #"" 9)
               (car (lists:reverse funs)))
     (is-equal `#(completion-item #"lfe-core" #"binary" null #"" 14)
               (cl:elt 1 (lists:search (lambda (item) (== #"binary" (completion-item-func item)))
@@ -54,9 +54,9 @@
                            (make-position line 0 character 3)
                            #" de"
                            'null))))
-    (is-equal `#(completion-item #"application" null null null 9)
+    (is-equal `#(completion-item #"application" #"" null #"" 9)
               (car funs))
-    (is-equal `#(completion-item #"zlib" null null null 9)
+    (is-equal `#(completion-item #"zlib" #"" null #"" 9)
               (car (lists:reverse funs)))))
 
 (deftest find-completions--invoked--symbol-or-module--no-delim
@@ -64,9 +64,9 @@
                            (make-position line 0 character 2)
                            #"de"
                            'null))))
-    (is-equal `#(completion-item #"application" null null null 9)
+    (is-equal `#(completion-item #"application" #"" null #"" 9)
               (car funs))
-    (is-equal `#(completion-item #"zlib" null null null 9)
+    (is-equal `#(completion-item #"zlib" #"" null #"" 9)
               (car (lists:reverse funs)))))
 
 (deftest find-completions--invoked--symbol-or-module--paren-delim
@@ -74,9 +74,9 @@
                            (make-position line 0 character 3)
                            #"(de"
                            'null))))
-    (is-equal `#(completion-item #"application" null null null 9)
+    (is-equal `#(completion-item #"application" #"" null #"" 9)
               (car funs))
-    (is-equal `#(completion-item #"zlib" null null null 9)
+    (is-equal `#(completion-item #"zlib" #"" null #"" 9)
               (car (lists:reverse funs)))))
 
 (deftest find-completions--invoked--module-functions--paren-delim--module
@@ -135,9 +135,9 @@
                            (make-position line 0 character 1)
                            #"io:"
                            'null))))
-    (is-equal `#(completion-item #"application" null null null 9)
+    (is-equal `#(completion-item #"application" #"" null #"" 9)
               (car funs))
-    (is-equal `#(completion-item #"zlib" null null null 9)
+    (is-equal `#(completion-item #"zlib" #"" null #"" 9)
               (car (lists:reverse funs)))))
 
 (deftest find-completions--empty-line
@@ -145,7 +145,20 @@
                            (make-position line 1 character 4)
                            #""
                            'null))))
-    (is-equal `#(completion-item #"application" null null null 9)
+    (is-equal `#(completion-item #"application" #"" null #"" 9)
               (car funs))
-    (is-equal `#(completion-item #"zlib" null null null 9)
+    (is-equal `#(completion-item #"zlib" #"" null #"" 9)
               (car (lists:reverse funs)))))
+
+(deftest generate-json--arity-0
+  (is-equal '(#(#"label" #"foo:bar/0")
+              #(#"kind" 3)
+              #(#"detail" #"")
+              #(#"insertTextFormat" 2)
+              #(#"insertText" #"bar"))
+            (completion-util:to-json
+                             (make-completion-item
+                              module "foo"
+                              func "bar"
+                              arity 0
+                              kind (completion-item-kind-function)))))
