@@ -150,19 +150,6 @@
     (is-equal `#(completion-item #"zlib" #"" null #"" 9)
               (car (lists:reverse funs)))))
 
-(deftest generate-json--arity-0
-  (is-equal '(#(#"label" #"foo:bar/0")
-              #(#"kind" 3)
-              #(#"detail" #"")
-              #(#"insertTextFormat" 2)
-              #(#"insertText" #"bar"))
-            (completion-util:to-json
-                             (make-completion-item
-                              module "foo"
-                              func "bar"
-                              arity 0
-                              kind (completion-item-kind-function)))))
-
 (deftest generate-json--arity-null
   (is-equal '(#(#"label" #"foo:bar")
               #(#"kind" 3)
@@ -176,18 +163,29 @@
                               arity 'null
                               kind (completion-item-kind-function)))))
 
+(defmacro make-citem (arity)
+  `(completion-util:to-json
+                    (make-completion-item
+                     module "foo"
+                     func "bar"
+                     arity ,arity
+                     kind (completion-item-kind-function))))
+
+(deftest generate-json--arity-0
+  (is-equal '(#(#"label" #"foo:bar/0")
+              #(#"kind" 3)
+              #(#"detail" #"")
+              #(#"insertTextFormat" 2)
+              #(#"insertText" #"bar"))
+            (make-citem 0)))
+
 (deftest generate-json--arity-1
   (is-equal '(#(#"label" #"foo:bar/1")
               #(#"kind" 3)
               #(#"detail" #"")
               #(#"insertTextFormat" 2)
               #(#"insertText" #"bar ${1:arg1}"))
-            (completion-util:to-json
-                             (make-completion-item
-                              module "foo"
-                              func "bar"
-                              arity 1
-                              kind (completion-item-kind-function)))))
+            (make-citem 1)))
 
 (deftest generate-json--arity-2
   (is-equal '(#(#"label" #"foo:bar/2")
@@ -195,12 +193,7 @@
               #(#"detail" #"")
               #(#"insertTextFormat" 2)
               #(#"insertText" #"bar ${1:arg1} ${2:arg2}"))
-            (completion-util:to-json
-                             (make-completion-item
-                              module "foo"
-                              func "bar"
-                              arity 2
-                              kind (completion-item-kind-function)))))
+            (make-citem 2)))
 
 (deftest generate-json--arity-3
   (is-equal '(#(#"label" #"foo:bar/3")
@@ -208,9 +201,4 @@
               #(#"detail" #"")
               #(#"insertTextFormat" 2)
               #(#"insertText" #"bar ${1:arg1} ${2:arg2} ${3:arg3}"))
-            (completion-util:to-json
-                             (make-completion-item
-                              module "foo"
-                              func "bar"
-                              arity 3
-                              kind (completion-item-kind-function)))))
+            (make-citem 3)))
