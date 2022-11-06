@@ -244,7 +244,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
      (meck:unload 'completion-util)
      (is (expected-result-p
           #(reply
-            #"{\"id\":99,\"result\":[{\"label\":\"foo:defun/3\",\"kind\":2,\"detail\":\"foo\",\"insertTextFormat\":2,\"insertText\":\"defun\"}]}"))))
+            #"{\"id\":99,\"result\":[{\"label\":\"foo:defun/3\",\"kind\":2,\"detail\":\"foo\",\"insertTextFormat\":2,\"insertText\":\"defun ${1:arg1} ${2:arg2} ${3:arg3}\"}]}"))))
    (is (meck:validate 'compile-util))
    (meck:unload 'compile-util)))
 

@@ -1,4 +1,4 @@
-(defmodule code-util-tests
+(defmodule code-util
   (export
    (add-code-paths 1)))
 

@@ -1,6 +1,5 @@
 (defmodule completion-util
-  (export (find-completions-at 3)
-          (to-json 1)))
+  (export (find-completions-at 3)))
 
 (include-lib "apps/lfe-ls/include/utils.lfe")
 (include-lib "apps/lfe-ls/include/lsp-model.lfe")
@@ -145,42 +144,3 @@ Two entries if there was a ':' in the text that was parsed. The second element i
   (if (is_binary thing)
     thing
     (list_to_binary thing)))
-
-(defun to-json (citem)
-  "Converts `completion-item` to LSP json representation.
-!!!The conversion to LSP json can be considered business logic which doesn't belong to this module.
-But for right now there is no better place."
-  (let ((module (completion-item-module citem))
-        (func (completion-item-func citem))
-        (arity (completion-item-arity citem))
-        (detail (completion-item-detail citem))
-        (kind (completion-item-kind citem)))
-    (let* ((base-label (case func
-                         ('null (lfe_io:format1 "~s" `(,module)))
-                         (#"" (lfe_io:format1 "~s" `(,module)))
-                         (fn (lfe_io:format1 "~s:~s" `(,module ,fn)))))
-           (label (list_to_binary
-                   (case arity
-                     ('null base-label)
-                     (ar (lfe_io:format1 "~s~s"
-                                 `(,base-label
-                                   ,(lfe_io:format1 "/~p" `(,ar))))))))
-           (insertText (list_to_binary
-                        (case func
-                          ('null module)
-                          (#"" module)
-                          (fn (case arity
-                                ('null fn)
-                                (0 fn)
-                                (n (lists:foldl (lambda (i acc)
-                                                  (lfe_io:format1 "~s ${~p:arg~p}" `(,acc ,i ,i)))
-                                          fn
-                                          (lists:seq 1 n)))
-                                )))))
-           (result `(#(#"label" ,label)
-                     #(#"kind" ,kind)
-                     #(#"detail" ,detail)
-                     #(#"insertTextFormat" 2)
-                     #(#"insertText" ,insertText))))
-      ;;(logger:notice "result: ~p" `(,result))
-      result)))

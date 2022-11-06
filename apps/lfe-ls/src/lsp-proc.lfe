@@ -275,7 +275,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
 
 (defun %make-completions-result (completions)
   "`completions' is a list of `completion-item' records."
-  (lists:map #'completion-util:to-json/1 completions))
+  (lists:map #'lsp-util:completion-item-to-json/1 completions))
 
 (defun %make-notification (method params)
   `(#(#"jsonrpc" #"2.0")
