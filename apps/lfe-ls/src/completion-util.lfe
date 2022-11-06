@@ -172,7 +172,9 @@ But for right now there is no better place."
                           (fn (case arity
                                 ('null fn)
                                 (0 fn)
-                                (1 (lfe_io:format1 "~s ~s" `(,fn "${1:arg1}"))))))))
+                                (1 (lfe_io:format1 "~s ~s" `(,fn "${1:arg1}")))
+                                (2 (lfe_io:format1 "~s ~s ~s" `(,fn "${1:arg1}" "${2:arg2}")))
+                                )))))
            (result `(#(#"label" ,label)
                      #(#"kind" ,kind)
                      #(#"detail" ,detail)

@@ -188,3 +188,16 @@
                               func "bar"
                               arity 1
                               kind (completion-item-kind-function)))))
+
+(deftest generate-json--arity-2
+  (is-equal '(#(#"label" #"foo:bar/2")
+              #(#"kind" 3)
+              #(#"detail" #"")
+              #(#"insertTextFormat" 2)
+              #(#"insertText" #"bar ${1:arg1} ${2:arg2}"))
+            (completion-util:to-json
+                             (make-completion-item
+                              module "foo"
+                              func "bar"
+                              arity 2
+                              kind (completion-item-kind-function)))))
