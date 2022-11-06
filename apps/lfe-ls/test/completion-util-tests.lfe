@@ -162,3 +162,29 @@
                               func "bar"
                               arity 0
                               kind (completion-item-kind-function)))))
+
+(deftest generate-json--arity-null
+  (is-equal '(#(#"label" #"foo:bar")
+              #(#"kind" 3)
+              #(#"detail" #"")
+              #(#"insertTextFormat" 2)
+              #(#"insertText" #"bar"))
+            (completion-util:to-json
+                             (make-completion-item
+                              module "foo"
+                              func "bar"
+                              arity 'null
+                              kind (completion-item-kind-function)))))
+
+(deftest generate-json--arity-1
+  (is-equal '(#(#"label" #"foo:bar/1")
+              #(#"kind" 3)
+              #(#"detail" #"")
+              #(#"insertTextFormat" 2)
+              #(#"insertText" #"bar ${1:arg1}"))
+            (completion-util:to-json
+                             (make-completion-item
+                              module "foo"
+                              func "bar"
+                              arity 1
+                              kind (completion-item-kind-function)))))

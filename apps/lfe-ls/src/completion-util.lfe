@@ -169,7 +169,10 @@ But for right now there is no better place."
                         (case func
                           ('null module)
                           (#"" module)
-                          (fn fn))))
+                          (fn (case arity
+                                ('null fn)
+                                (0 fn)
+                                (1 (lfe_io:format1 "~s ~s" `(,fn "${1:arg1}"))))))))
            (result `(#(#"label" ,label)
                      #(#"kind" ,kind)
                      #(#"detail" ,detail)
