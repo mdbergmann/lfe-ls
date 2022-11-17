@@ -56,7 +56,7 @@
 (deftest compile--ok-unused-functions
   (let ((`#(ok ,cwd) (file:get_cwd)))
     (is-equal (tuple
-               'ok
+               'fail
                (list
                 (make-diagnostic-item
                  range (line-to-range 3)
