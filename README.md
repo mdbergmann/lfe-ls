@@ -58,7 +58,7 @@ will automatically be found.
 
 ### Project support
 
-In order to allow lfe-ls to work with a workspace folder it is adviceable to create a git repository in the folder your are operating. That will Emacs to recognize the folder as a project.
+In order to allow lfe-ls to work with a workspace folder it is a must to create a **git repository** in the folder your are operating. That will Emacs to recognize the folder as a project.
 
 
 ![](docs/start-eglot.gif)
