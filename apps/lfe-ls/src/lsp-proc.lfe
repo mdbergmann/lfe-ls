@@ -198,7 +198,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
         (`#(#"position" ,position) (find-tkey #"position" params))
         (`#(#"context" ,context) (find-tkey #"context" params)))
     (let ((`(#(#"uri" ,uri)) text-document)
-          (`(#(#"line" ,line) #(#"character" ,character)) position)
+          (`#(,line ,character) (extract-position-data position))
           (trigger-char (find-tkey #"triggerCharacter" context)))
       (let* ((state-documents (lsp-state-documents state))
              (document (map-get state-documents uri))
@@ -211,6 +211,13 @@ Handler functions (like `%on-initialize-req`) are expected to return:
                      trigger-char))
            ,state
            null)))))
+
+(defun extract-position-data
+  ([`(#(#"line" ,line) #(#"character" ,character))]
+    #(line character))
+  ([`(#(#"character" ,character) #(#"line" ,line))]
+   #(line character))
+  )
 
 (defun %on-textDocument/hover-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
