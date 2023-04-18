@@ -212,11 +212,11 @@ Handler functions (like `%on-initialize-req`) are expected to return:
            ,state
            null)))))
 
-(defun extract-position-data
+(defun %extract-position-data
   ([`(#(#"line" ,line) #(#"character" ,character))]
-    (tuple line character))
+   (tuple line character))
   ([`(#(#"character" ,character) #(#"line" ,line))]
-    (tuple  line character)))
+   (tuple line character)))
 
 (defun %on-textDocument/hover-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
