@@ -248,6 +248,39 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
    (is (meck:validate 'compile-util))
    (meck:unload 'compile-util)))
 
+(deftest process-textDocument/completion-message--trigger-character-line
+  "Tests that the order of the `character` & `line` information does not matter for the call"
+  (with-fixture
+   (meck:new 'compile-util)
+   (meck:expect 'compile-util 'compile-file (lambda (_ _) #(ok ())))
+   (let ((new-state (lsp-proc:process-input
+                     (make-compl-example-textDocument/didOpen-request)
+                     (make-lsp-state)
+                     (lambda (x) 'null))))
+     (meck:new 'completion-util)
+     (meck:expect 'completion-util 'find-completions-at
+                  (lambda (text position trigger-char)
+                    (case trigger-char
+                      ('null (error "Not expected trigger-char!"))
+                      (#":" `(,(make-completion-item
+                                module #"foo"
+                                func #"defun"
+                                detail #"foo"
+                                arity 3
+                                kind 2))))))
+     (is-equal new-state
+               (lsp-proc:process-input
+                         (make-simple-textDocument/completion-request--trigger-character-line)
+                         new-state
+                         (fake-sender-fun)))
+     (meck:validate 'completion-util)
+     (meck:unload 'completion-util)
+     (is (expected-result-p
+          #(reply
+            #"{\"id\":99,\"result\":[{\"label\":\"foo:defun/3\",\"kind\":2,\"detail\":\"foo\",\"insertTextFormat\":2,\"insertText\":\"defun ${1:arg1} ${2:arg2} ${3:arg3}\"}]}"))))
+   (is (meck:validate 'compile-util))
+   (meck:unload 'compile-util)))
+
 (deftest process-textDocument/hover
   (with-fixture
    (meck:new 'compile-util)
@@ -262,6 +295,30 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
      (is-equal new-state
                (lsp-proc:process-input
                          (make-simple-textDocument/hover-request)
+                         new-state
+                         (fake-sender-fun)))
+     (meck:validate 'hover-util)
+     (meck:unload 'hover-util)
+     (meck:unload 'compile-util)
+     (is (expected-result-p
+          #(reply
+            #"{\"id\":99,\"result\":{\"contents\":\"This is documentation\"}}"))))))
+
+(deftest process-textDocument/hover--character-line
+  "Tests that the order of the `character` & `line` information does not matter for the call"
+  (with-fixture
+   (meck:new 'compile-util)
+   (meck:expect 'compile-util 'compile-file (lambda (_ _) #(ok ())))
+   (let ((new-state (lsp-proc:process-input
+                              (make-compl-example-textDocument/didOpen-request)
+                              (make-lsp-state)
+                              (lambda (x) 'null))))
+     (meck:new 'hover-util)
+     ;; hover util takes text and position
+     (meck:expect 'hover-util 'get-docu (lambda (_text _position) #(ok #"This is documentation")))
+     (is-equal new-state
+               (lsp-proc:process-input
+                         (make-simple-textDocument/hover-request--character-line)
                          new-state
                          (fake-sender-fun)))
      (meck:validate 'hover-util)
@@ -354,12 +411,28 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3},\"context\":{\"triggerKind\":2,\"triggerCharacter\":\":\"}}
 }")
 
+(defun make-simple-textDocument/completion-request--trigger-character-line ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/completion\",
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"character\":3,\"line\":0},\"context\":{\"triggerKind\":2,\"triggerCharacter\":\":\"}}
+}")
+
 (defun make-simple-textDocument/hover-request ()
   #"{
 \"jsonrpc\":\"2.0\",
 \"id\":99,
 \"method\":\"textDocument/hover\",
 \"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"line\":0,\"character\":3}}
+}")
+
+(defun make-simple-textDocument/hover-request--character-line ()
+  #"{
+\"jsonrpc\":\"2.0\",
+\"id\":99,
+\"method\":\"textDocument/hover\",
+\"params\":{\"textDocument\":{\"uri\":\"file:///foobar.lfe\"},\"position\":{\"character\":3, \"line\":0}}
 }")
 
 (defun make-simple-shutdown-request ()
