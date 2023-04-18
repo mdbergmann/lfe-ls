@@ -214,15 +214,15 @@ Handler functions (like `%on-initialize-req`) are expected to return:
 
 (defun extract-position-data
   ([`(#(#"line" ,line) #(#"character" ,character))]
-    #(line character))
+    (tuple line character))
   ([`(#(#"character" ,character) #(#"line" ,line))]
-   #(line character)))
+    (tuple  line character)))
 
 (defun %on-textDocument/hover-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
         (`#(#"position" ,position) (find-tkey #"position" params)))
     (let ((`(#(#"uri" ,uri)) text-document)
-          (`(#(#"line" ,line) #(#"character" ,character)) position))
+          (`#(,line ,character) (extract-position-data position)))
       (let* ((state-documents (lsp-state-documents state))
              (document (map-get state-documents uri))
              (text (document-text document)))
