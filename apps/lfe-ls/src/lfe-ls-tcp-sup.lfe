@@ -42,7 +42,7 @@
 (defun init (_args)
   (logger:debug "init (tcp-sup)")
   (let* (((tuple 'ok port) (application:get_env 'lfe-ls 'port))
-         ((tuple 'ok listen-socket) (gen_tcp:listen port '(#(active false) binary))))
+         ((tuple 'ok listen-socket) (gen_tcp:listen port '(#(active false) #(reuseaddr true) binary))))
     (logger:info "Starting on port: ~p" `(,port))
     (logger:debug "listen (tcp-sup) ok")
     `#(ok #(,(sup-flags)
