@@ -216,8 +216,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
   ([`(#(#"line" ,line) #(#"character" ,character))]
     #(line character))
   ([`(#(#"character" ,character) #(#"line" ,line))]
-   #(line character))
-  )
+   #(line character)))
 
 (defun %on-textDocument/hover-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
