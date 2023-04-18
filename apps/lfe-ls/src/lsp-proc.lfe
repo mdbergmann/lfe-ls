@@ -276,7 +276,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
                        (#(#"resolveProvider" false)
                         #(#"triggerCharacters" (#"(" #":" #"'"))))
                      #(#"textDocumentSync"
-                       (#(#"openClose" true) #(#"change" 1)))
+                       (#(#"openClose" true) #(#"change" 1) #(#"save" (#(#"includeText" false)))))
                      #(#"hoverProvider" true))))
 
 (defun %make-completions-result (completions)
