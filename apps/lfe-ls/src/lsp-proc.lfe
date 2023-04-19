@@ -198,7 +198,8 @@ Handler functions (like `%on-initialize-req`) are expected to return:
         (`#(#"position" ,position) (find-tkey #"position" params))
         (`#(#"context" ,context) (find-tkey #"context" params)))
     (let ((`(#(#"uri" ,uri)) text-document)
-          (`#(,line ,character) (%extract-position-data position))
+          (`#(#"line" ,line) (find-tkey #"line" position))
+          (`#(#"character" ,character) (find-tkey #"character" position))
           (trigger-char (find-tkey #"triggerCharacter" context)))
       (let* ((state-documents (lsp-state-documents state))
              (document (map-get state-documents uri))
@@ -212,17 +213,12 @@ Handler functions (like `%on-initialize-req`) are expected to return:
            ,state
            null)))))
 
-(defun %extract-position-data
-  ([`(#(#"line" ,line) #(#"character" ,character))]
-   (tuple line character))
-  ([`(#(#"character" ,character) #(#"line" ,line))]
-   (tuple line character)))
-
 (defun %on-textDocument/hover-req (id params state)
   (let ((`#(#"textDocument" ,text-document) (find-tkey #"textDocument" params))
         (`#(#"position" ,position) (find-tkey #"position" params)))
     (let ((`(#(#"uri" ,uri)) text-document)
-          (`#(,line ,character) (%extract-position-data position)))
+          (`#(#"line" ,line) (find-tkey #"line" position))
+          (`#(#"character" ,character) (find-tkey #"character" position)))
       (let* ((state-documents (lsp-state-documents state))
              (document (map-get state-documents uri))
              (text (document-text document)))
@@ -276,7 +272,9 @@ Handler functions (like `%on-initialize-req`) are expected to return:
                        (#(#"resolveProvider" false)
                         #(#"triggerCharacters" (#"(" #":" #"'"))))
                      #(#"textDocumentSync"
-                       (#(#"openClose" true) #(#"change" 1) #(#"save" (#(#"includeText" false)))))
+                       (#(#"openClose" true)
+                        #(#"change" 1)
+                        #(#"save" (#(#"includeText" false)))))
                      #(#"hoverProvider" true))))
 
 (defun %make-completions-result (completions)

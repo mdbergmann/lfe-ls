@@ -20,7 +20,7 @@
 (defmacro with-fixture body
   `(let ((receiver (spawn (MODULE) 'fake-lsp-resp-sender '(()))))
      ,@body
-    (! receiver 'terminate)))
+     (! receiver 'terminate)))
 
 
 ;; (deftest error-on-decoding
@@ -105,7 +105,7 @@ This one will just push the computed result to our fake-lsp-resp-sender actor"
                initialized-lsp-state)
      (is (expected-result-p
           #(reply
-            #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1},\"hoverProvider\":true},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")))
+            #"{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1,\"save\":{\"includeText\":false}},\"hoverProvider\":true},\"serverInfo\":{\"name\":\"lfe-ls\"}}}")))
      (is-equal "/tmp/foo" (lsp-state-rootpath initialized-lsp-state)))))
 
 (deftest process-initialized-message
