@@ -8,8 +8,6 @@
         stdlib,
         getopt,
         lfe,
-        mochiweb,
-        jsx,
         ljson
     ]},
     {env, []},
