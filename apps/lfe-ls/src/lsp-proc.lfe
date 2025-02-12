@@ -15,7 +15,7 @@ LSP server state.
 
 This function returns a newly computed state for the caller."
   (try
-      (let ((json-input (ljson:decode input)))
+      (let ((json-input (jsx:decode input `(#(return_maps false)))))
         (logger:debug "json-input: ~p" `(,json-input))
         (let* ((`#(#"jsonrpc" #"2.0") (find-tkey #"jsonrpc" json-input))
                (`#(#"method" ,req-method) (find-tkey #"method" json-input))
@@ -30,7 +30,7 @@ This function returns a newly computed state for the caller."
        (progn
          (logger:warning "Error: ~p, type: ~p, value: ~p"
                          `(,stacktrace ,type ,value))
-         (funcall send-fun `#(reply ,(ljson:encode
+         (funcall send-fun `#(reply ,(jsx:encode
                                       (%make-error-response
                                        'null
                                        (req-parse-error)
@@ -40,7 +40,7 @@ This function returns a newly computed state for the caller."
 (defmacro %send-async (notify-fun send-fun)
   `(spawn (lambda ()
             (let (((tuple code response) (funcall ,notify-fun)))
-              (funcall ,send-fun `#(,code ,(ljson:encode response)))))))
+              (funcall ,send-fun `#(,code ,(jsx:encode response)))))))
 
 (defun %process-method (id method params state send-fun)
   "This function is the main lsp 'method' dispatcher.
@@ -88,7 +88,7 @@ Handler functions (like `%on-initialize-req`) are expected to return:
                                   (concat-binary method #"'!"))))
                ,state
                null)))))
-    (funcall send-fun `#(,code ,(ljson:encode response)))
+    (funcall send-fun `#(,code ,(jsx:encode response)))
     (if (!= cont 'null)
       (%send-async cont send-fun))
     state))

@@ -8,7 +8,7 @@
         stdlib,
         getopt,
         lfe,
-        ljson
+        jsx
     ]},
     {env, []},
     {modules, []},

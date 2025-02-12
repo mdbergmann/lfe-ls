@@ -23,7 +23,7 @@
    (let ((`#(ok ,socket) (gen_tcp:connect "127.0.0.1" 10567 '(#(active false)))))
      (gen_tcp:send socket (make-simple-initialize-request))
      (let (((tuple 'ok response) (gen_tcp:recv socket 0)))
-       (is-equal "Content-Length: 219\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1},\"hoverProvider\":true},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))
+       (is-equal "Content-Length: 248\r\n\r\n{\"id\":99,\"result\":{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\"(\",\":\",\"'\"]},\"textDocumentSync\":{\"openClose\":true,\"change\":1,\"save\":{\"includeText\":false}},\"hoverProvider\":true},\"serverInfo\":{\"name\":\"lfe-ls\"}}}" response))
      (gen_tcp:close socket))))
 
 (deftest process-completion-message
