@@ -2,6 +2,8 @@
 
 *LFE Language Server implementation*
 
+Tested with Erlang 25-27.
+
 ## About [&#x219F;](#table-of-contents)
 
 LFE language server written in LFE.
